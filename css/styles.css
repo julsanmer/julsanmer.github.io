@@ -1,0 +1,294 @@
+/* Header Title */
+
+
+nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    min-height: 8vh;
+    background-color: teal;
+    font-family: "Montserrat", sans-serif;
+}
+  
+.heading {
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    font-size: 20px;
+}
+  
+.nav-links {
+    display: flex;
+    justify-content: space-around;
+    width: 30%;
+}
+  
+  .nav-links li {
+  
+    list-style: none;
+  
+  }
+  
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    letter-spacing: 3px;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 14px 16px;
+}
+  
+.nav-links a:hover:not(.active) {
+    background-color: lightseagreen;
+}
+  
+.nav-links li a.active {
+    background-color: #4caf50;
+}
+
+/*These are classes for the publications section*/
+.h2publications {
+    color: rgb(0, 0, 0);
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: left;
+    width: 500px;
+}
+
+.lipublications {
+    width: 85% !important;
+    margin: 10px;
+}
+
+.linkpublications {
+    color: rgb(51, 68, 252); 
+    background-color: transparent; 
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.linkdoi {
+    color: rgb(0, 0, 0); 
+    background-color: transparent; 
+    text-decoration: none;
+}
+
+/*These are classes for the projects section*/
+.profile_small {
+    margin: 100px;
+    height:200px;
+    border-radius: 10%;
+    border: 2px solid #000000;
+    margin-left: 200px;
+}
+
+div.projects {
+    display: grid;
+    padding: 2rem;
+    grid-template-columns: 300px 1fr;
+    gap: 8rem;
+    align-items: center;
+    max-width: 1000px;
+    margin: 0 auto;
+    font-size: 5px;
+}
+p.projects {
+    font-size: 18px;
+    margin-top:-10px;
+    margin-bottom:10px;
+}
+
+img.projects {
+    margin-left:-50px;
+    width: 400px;
+    height: auto;
+    border-radius: 1%;
+    border: 4px solid #000000;
+}
+
+h1.headprojects {
+    text-align: center;
+    font-size:20px;
+    margin-bottom:-5px;
+    margin-top:60px;
+}
+
+.brprojects {
+    display: block; /* makes it have a width */
+    content: ""; /* clears default height */
+    margin-top: 0; /* change this to whatever height you want it */
+ }
+
+ol.nostyle {
+    /*text-align: center;*/
+    width: 85%;
+    margin: 10px;
+    margin-left: 145px;
+    /*margin-right: 100px;*/
+    list-style-type: none;
+    margin-bottom: 70px;
+}
+li.nostyle {
+    /*text-align: center;*/
+    width: 85%;
+    margin: 10px;
+    /*margin-left: 100px;
+    margin-right: 100px;*/
+    list-style-type: none;
+}
+
+ /* Create two equal columns that float next to each other
+.column-2 {
+    float: left;
+    width: 45%;
+    padding: 10px;
+    padding-left:10px;
+    padding-right: 10px;
+    height: 600px;
+    margin:10px;
+    margin-right:10px;
+    margin-bottom: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    line-height:2;
+} */
+
+/* Large profile image
+.large-profile {
+    background: url('../images/photo.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+.column-4 {
+    float: left;
+    width: 18%;
+    padding: 10px;
+    margin: 10px;
+    height: 250px;
+} */
+
+/* .project-1 {
+    background: url('../images/shark.jpeg');
+    background-size: cover;
+    width: 20%;
+    padding: 10px;
+    padding-left:10px;
+    padding-right: 10px;
+    height: 100px;
+    margin:10px;
+    margin-right:10px;
+    margin-bottom: 10px;
+}
+  
+.project-2 {
+    background-color:white;
+}
+  
+.project-3 {
+    background-color:#209BFF;
+}
+  
+.project-4 {
+    background-color:#112d4e;
+} */
+
+.divindex {
+    display: grid;
+    align-items: center; 
+    grid-template-columns: 1fr 1fr 1fr;
+    height: 300px;
+    margin-top: -40px;
+}
+   
+.text {
+    width: 400px;
+    height: 300px;
+    margin-left: 50px;
+    margin-top: 80px;
+    font-size: 50px;
+}
+
+div.aboutme {
+    text-align: center;
+    height: 300px;
+    margin-left: 200px;
+    margin-right: 200px;
+    margin-top: 80px;
+    margin-bottom: -100px;
+    font-size: 40px;
+}
+
+div.resume {
+    height: 300px;
+    margin-left: 150px;
+    margin-right: 150px;
+    margin-top: 80px;
+    font-size: 20px;
+}
+
+figcaption.figcaption{
+    color: rgb(0, 0, 0);
+    font-style: italic;
+    text-align: right;
+    font-size: 10px;
+    margin-right: 150px;
+}
+
+figcaption.projects{
+    color: rgb(0, 0, 0);
+    font-style: italic;
+    text-align: right;
+    font-size: 10px;
+    margin-right: 350px;
+    width: 350px;
+}
+
+/* General Website Style rules */
+body {
+    font-family: "Helvetica", Sans-Serif;
+    /*background-image: url('../images/background.jpg');*/
+    background-color: #caeecd;
+}
+
+h1 {
+    color: rgb(0, 0, 0);
+    font-size: 30px;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: left;
+}
+
+h2 {
+    color: rgb(0, 0, 0);
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: left;
+}
+
+h3 {
+    color: rgb(0, 0, 0);
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: left;
+}
+
+h4 {
+    color: rgb(0, 0, 0);
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: left;
+}
+
+p {
+    color: rgb(0, 0, 0);
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: justify;
+}
+
+p.copyright {
+    color: rgb(0, 0, 0);
+    font-size: 14px;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: justify;
+    margin-left: 600px;
+}
