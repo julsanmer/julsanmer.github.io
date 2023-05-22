@@ -6,6 +6,7 @@ nav.navbar{
     min-height: 8vh;
     background-color: teal;
     font-family: "Montserrat", sans-serif;
+    height: 30px;
 }
 ul.nav-links{
     display: flex;
@@ -157,7 +158,7 @@ figcaption.figcaption{
     font-style: italic;
     text-align: right;
     font-size: 10px;
-    margin-right: 170px;
+    margin-right: 250px;
 }
 
 figcaption.projects{
