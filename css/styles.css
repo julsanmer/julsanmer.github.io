@@ -79,15 +79,34 @@ div.projects {
     margin: 0 auto;
     font-size: 5px;
 }
+div.projects2 {
+    align-items: center;
+    width: 1000px;
+    margin: 0 auto;
+    font-size: 5px;
+}
 p.projects {
-    font-size: 18px;
+    font-size: 15px;
     margin-top:-10px;
+    margin-bottom:10px;
+}
+p.projects2{
+    font-size: 16px;
+    margin-top:10px;
     margin-bottom:10px;
 }
 img.projects {
     margin-left:-50px;
     width: 400px;
     height: auto;
+    border-radius: 1%;
+    border: 4px solid #000000;
+}
+img.projects2{
+    float: left;
+    width: 325px;
+    height: auto;
+    margin-right:20px;
     border-radius: 1%;
     border: 4px solid #000000;
 }
@@ -104,20 +123,20 @@ h1.headprojects {
  }
 ol.nostyle {
     /*text-align: center;*/
-    width: 85%;
+    width: 100%;
     margin: 10px;
-    margin-left: 145px;
     /*margin-right: 100px;*/
     list-style-type: none;
     margin-bottom: 70px;
 }
 li.nostyle {
     width: 85%;
-    margin-top: -20px;
+    margin-top: 30px;
     margin-bottom: 20px;
     margin-left: 10px;
     margin-right: 10px;
     list-style-type: none;
+    font-size: 15px;
 }
 .divindex {
     display: grid;
