@@ -3,10 +3,9 @@ nav.navbar{
     display: flex;
     justify-content: space-around;
     align-items: center;
-    min-height: 8vh;
     background-color: teal;
     font-family: "Montserrat", sans-serif;
-    height: 30px;
+    height: 60px;
 }
 ul.nav-links{
     display: flex;
@@ -88,15 +87,17 @@ p.projects{
     font-size: 16px;
     margin-top:10px;
     margin-bottom:10px;
+    text-align: justify;
 }
-img.projects {
-    margin-left:-50px;
-    width: 400px;
-    height: auto;
+figure.projects{
+    float: left;
+    width: 325px;
+    height: 160px;
+    margin-right:20px;
     border-radius: 1%;
     border: 4px solid #000000;
 }
-img.projects2{
+img.projects{
     float: left;
     width: 325px;
     height: 160px;
@@ -135,13 +136,6 @@ li.nostyle {
     height: 300px;
     margin-top: -40px;
 }  
-.text {
-    width: 400px;
-    height: 300px;
-    margin-left: 50px;
-    margin-top: 80px;
-    font-size: 50px;
-}
 
 div.aboutme {
     text-align: center;
@@ -188,7 +182,7 @@ figcaption.figcaption{
     font-style: italic;
     text-align: right;
     font-size: 10px;
-    margin-right: 250px;
+    margin-right: 10%;
 }
 
 figcaption.projects{
@@ -213,7 +207,12 @@ h1.home {
     font-family: Arial, Helvetica, sans-serif;
     text-align: left;
 }
-
+h2.home {
+    color: rgb(0, 0, 0);
+    font-size: 25px;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: left;
+}
 h3.home {
     color: rgb(0, 0, 0);
     font-size: 20px;
@@ -228,7 +227,7 @@ h4.nav {
     text-align: left;
 }
 
-p {
+p.normal {
     color: rgb(0, 0, 0);
     font-size: 20px;
     font-family: Arial, Helvetica, sans-serif;
@@ -256,10 +255,17 @@ img.logoGMV {
     margin-left: 10px;
 }
 
-p.copyright {
+/*p.copyright {
     color: rgb(0, 0, 0);
     font-size: 14px;
     font-family: Arial, Helvetica, sans-serif;
     text-align: justify;
     margin-left: 600px;
+}*/
+div.copyright{
+    text-align: center;
+    align-items: center;
+    width: 1000px;
+    margin: 0 auto;
+    font-size: 15px;
 }
