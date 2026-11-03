@@ -1,0 +1,1436 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbital Maneuvers Calculator</title>
+<meta name="description" content="Interactive calculator for the impulsive maneuvers of Lesson 4 (Orbital Dynamics): single-impulse changes, Hohmann and bi-elliptic transfers, plane changes, apsides rotation and phasing, with 2D/3D plots and time animations.">
+<!-- KaTeX: local copy first (works offline), CDN as fallback, plain-Unicode fallback in the script if neither loads -->
+<link rel="stylesheet" href="katex/katex.min.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css'">
+<script>
+window.__katexFromCDN = function () {
+  var s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js';
+  s.onload = function () { var a = document.createElement('script'); a.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js'; a.onload = function () { if (window.onKatexReady) window.onKatexReady(); }; document.head.appendChild(a); };
+  document.head.appendChild(s);
+};
+</script>
+<script src="katex/katex.min.js" onerror="window.__katexFromCDN()"></script>
+<script src="katex/contrib/auto-render.min.js" onerror="void 0"></script>
+<style>
+:root{
+  --bg:#f4f5f9; --surface:#ffffff; --surface-2:#eef0f6; --text:#1b2030; --muted:#5f677b; --border:#d8dce6;
+  --accent:#9b1c1c; --accent-soft:#fbe9e9;
+  --c-init:#2563eb; --c-final:#ea580c; --c-t1:#15803d; --c-t2:#7c3aed; --c-pt:#111827; --c-sc:#dc2626; --c-tg:#ea580c; --c-dv:#b45309;
+  --warn-bg:#fff4e5; --warn-fg:#8a4b00; --ok-bg:#e8f6ec; --ok-fg:#1b5e20; --bad-bg:#fdecec; --bad-fg:#8f1d1d;
+  --radius:12px;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111318; --surface:#1a1d25; --surface-2:#232733; --text:#e6e8ef; --muted:#9aa3b8; --border:#333848;
+    --accent:#f08a8a; --accent-soft:#3a2224;
+    --c-init:#60a5fa; --c-final:#fb923c; --c-t1:#4ade80; --c-t2:#c084fc; --c-pt:#f3f4f6; --c-sc:#f87171; --c-tg:#fb923c; --c-dv:#fbbf24;
+    --warn-bg:#3a2a12; --warn-fg:#fcd9a0; --ok-bg:#15301c; --ok-fg:#a7e3b4; --bad-bg:#3b1a1a; --bad-fg:#f5b5b5;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111318; --surface:#1a1d25; --surface-2:#232733; --text:#e6e8ef; --muted:#9aa3b8; --border:#333848;
+  --accent:#f08a8a; --accent-soft:#3a2224;
+  --c-init:#60a5fa; --c-final:#fb923c; --c-t1:#4ade80; --c-t2:#c084fc; --c-pt:#f3f4f6; --c-sc:#f87171; --c-tg:#fb923c; --c-dv:#fbbf24;
+  --warn-bg:#3a2a12; --warn-fg:#fcd9a0; --ok-bg:#15301c; --ok-fg:#a7e3b4; --bad-bg:#3b1a1a; --bad-fg:#f5b5b5;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.45}
+body{padding:16px}
+.wrap{max-width:1140px;margin:0 auto}
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:8px 0 18px}
+header h1{margin:0;font-size:1.6rem;letter-spacing:-.01em}
+header p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.iconbtn{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:6px 10px;cursor:pointer;font:inherit}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 10px;font-size:1.05rem}
+.card h3{margin:0 0 8px;font-size:.98rem}
+.card .lead{margin:0 0 12px;color:var(--muted);font-size:.92rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 12px}
+label{display:flex;flex-direction:column;gap:4px;font-size:.84rem;color:var(--muted)}
+label > span.lbl{min-height:1.2em}
+input[type=number],input[type=text],select{width:100%;font:inherit;font-size:.95rem;color:var(--text);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 9px}
+input:disabled{opacity:.55}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.radios{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0 10px;font-size:.9rem}
+.radios label{flex-direction:row;align-items:center;gap:6px;color:var(--text)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px}
+.tabs button{font:inherit;font-size:.92rem;padding:8px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.panel{display:none}
+.panel.active{display:block}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:960px){.two{grid-template-columns:1fr}}
+.two > div{min-width:0}
+div[id$="Out"]{overflow-x:auto;position:relative}
+table.res{width:100%;border-collapse:collapse;font-size:.9rem;margin-top:8px}
+table.res td,table.res th{padding:5px 6px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+table.res td:first-child{width:46%}
+table.res td:last-child{text-align:right;font-family:var(--mono);font-size:.86rem;white-space:normal}
+table.res th.sub{background:var(--surface-2);font-weight:600;font-size:.86rem;color:var(--muted)}
+table.res tr.best td{background:var(--ok-bg);color:var(--ok-fg);font-weight:600}
+table.cmp{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:8px}
+table.cmp th,table.cmp td{padding:5px 6px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono);font-size:.84rem;white-space:nowrap}
+table.cmp th{font-family:var(--font);color:var(--muted);font-weight:600}
+table.cmp td:first-child,table.cmp th:first-child{text-align:left;font-family:var(--font)}
+table.cmp tr.best td{background:var(--ok-bg);color:var(--ok-fg);font-weight:600}
+.dim{color:var(--muted);font-weight:400}
+.note{font-size:.86rem;color:var(--muted);margin:6px 0}
+.msg{border-radius:8px;padding:8px 10px;font-size:.88rem;margin:8px 0}
+.msg.warn{background:var(--warn-bg);color:var(--warn-fg)}
+.msg.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.msg.bad{background:var(--bad-bg);color:var(--bad-fg)}
+.plotbox{background:var(--surface-2);border-radius:10px;padding:8px;min-height:240px}
+.plotbox svg{width:100%;height:auto;aspect-ratio:1/1;display:block}
+.plotbox svg .body{fill:var(--muted);opacity:.55}
+.plotbox svg text{font-family:var(--font)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.82rem;color:var(--muted);margin-top:6px}
+.legend .lg i{display:inline-block;width:22px;border-top:2px solid;vertical-align:middle;margin-right:6px}
+.usefuel{font:inherit;font-size:.75rem;padding:1px 7px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--accent);cursor:pointer;margin-left:6px}
+.smallbtn{font:inherit;font-size:.82rem;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
+footer{color:var(--muted);font-size:.8rem;margin:20px 0 10px}
+hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
+/* plot toolbar, 3D canvas, animation bar */
+.ptools{display:flex;align-items:center;gap:4px;margin-bottom:6px;font-size:.76rem;color:var(--muted);flex-wrap:wrap}
+.ptools button,.anim button{font:inherit;font-size:.74rem;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
+.ptools button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ptools .p3d{display:none}
+.ptools.is3d .p3d{display:inline-flex;gap:4px;align-items:center}
+.ptools .hint{margin-left:auto}
+.plotbox canvas.c3d{width:100%;aspect-ratio:1/1;display:block;touch-action:none;cursor:grab;border-radius:6px}
+.anim{display:none;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:.78rem;color:var(--muted)}
+.anim.on{display:flex}
+.anim button.play{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;min-width:64px}
+.anim input[type=range]{flex:1;min-width:90px;accent-color:var(--accent)}
+.anim select{width:auto;padding:2px 6px;font-size:.78rem}
+.anim .readout{width:100%;font-size:.8rem;color:var(--text);line-height:1.4}
+.anim .readout .ev{color:var(--muted);margin-right:10px}
+.anim .readout .ev.done{color:var(--ok-fg);font-weight:600}
+/* math */
+.katex{font-size:1.02em}
+.lead .katex{color:var(--text)}
+.katex-display{margin:.5em 0;overflow-x:auto;overflow-y:hidden;position:relative}
+.mfb{font-family:"Latin Modern Math","STIX Two Math","Cambria Math",Georgia,serif;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Orbital Maneuvers Calculator</h1>
+    <p>Impulsive maneuvers from Lesson 4 of Orbital Dynamics. Define the central body and the initial orbit once (including the spacecraft's current true anomaly \(\theta_0\)), then explore each maneuver family. Every orbit plot can be switched to an interactive 3D view (drag to rotate, wheel to zoom) and played as a time animation from \(\theta_0\) through each impulse. Velocities in km/s, distances in km, angles in degrees.</p>
+  </div>
+  <button class="iconbtn" id="themeBtn" title="Toggle light/dark">◐ Theme</button>
+</header>
+
+<!-- ============ 1. ORBIT DEFINITION ============ -->
+<section class="card" id="orbitCard">
+  <h2>1 · Central body and initial orbit</h2>
+  <div class="grid">
+    <label><span class="lbl">Central body</span>
+      <select id="body">
+        <option value="earth">Earth</option><option value="moon">Moon</option><option value="mars">Mars</option><option value="sun">Sun</option><option value="custom">Custom</option>
+      </select></label>
+    <label><span class="lbl">\(\mu\) (km³/s²)</span><input id="mu" type="number" step="any"></label>
+    <label><span class="lbl">Body radius \(R\) (km)</span><input id="R" type="number" step="any"></label>
+    <label><span class="lbl">Define shape by</span>
+      <select id="defmode">
+        <option value="ae">a, e</option><option value="rpra">rp, ra (radii)</option><option value="hpha">hp, ha (altitudes)</option>
+      </select></label>
+    <label><span class="lbl" id="l_o1">\(a\) (km)</span><input id="o1" type="number" step="any"></label>
+    <label><span class="lbl" id="l_o2">\(e\)</span><input id="o2" type="number" step="any"></label>
+    <label><span class="lbl">\(i\), inclination (°)</span><input id="inc" type="number" step="any"></label>
+    <label><span class="lbl">\(\Omega\), RAAN (°)</span><input id="raan" type="number" step="any"></label>
+    <label><span class="lbl">\(\omega\), arg. of perigee (°)</span><input id="argp" type="number" step="any"></label>
+    <label><span class="lbl">\(\theta_0\), true anomaly now (°)</span><input id="ta" type="number" step="any"></label>
+  </div>
+  <div id="orbitOut"></div>
+</section>
+
+<!-- ============ 2. MANEUVER TABS ============ -->
+<section class="card">
+  <h2>2 · Maneuver</h2>
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="single" aria-selected="true">Single impulse</button>
+    <button role="tab" data-tab="transfer">Hohmann &amp; bi-elliptic</button>
+    <button role="tab" data-tab="plane">Inclination / RAAN</button>
+    <button role="tab" data-tab="apsides">Line of apsides</button>
+    <button role="tab" data-tab="phasing">Phasing</button>
+  </div>
+
+  <!-- ---------- SINGLE IMPULSE ---------- -->
+  <div class="panel active" id="panel-single">
+    <div class="card">
+      <h3>Velocity triangle at a chosen burn point \(\theta_b\)</h3>
+      <p class="lead">Phasor solution: \(V_f\angle\varphi = \Delta V\angle\psi + V_i\angle 0^\circ\). Both \(\psi\) and \(\varphi\) are measured counterclockwise from \(\vec V_i\) (\(\psi = 0^\circ\) is a prograde tangential burn, \(\psi = 180^\circ\) retrograde). Equivalent trigonometric form: \(\Delta V^2 = V_i^2 + V_f^2 - 2V_iV_f\cos\varphi\), \(\sin\psi = V_f\sin\varphi/\Delta V\). The new orbit follows from \((r, V_f, \gamma_f)\) with \(\gamma_f = \gamma_i - \varphi\). The spacecraft coasts from \(\theta_0\) to \(\theta_b\) before the impulse.</p>
+      <div class="radios">
+        <label><input type="radio" name="trimode" value="fwd" checked> Given \(\Delta V,\ \psi\) → find \(V_f,\ \varphi\) and the new orbit</label>
+        <label><input type="radio" name="trimode" value="bwd"> Given \(V_f,\ \varphi\) → find \(\Delta V,\ \psi\)</label>
+      </div>
+      <div class="grid">
+        <label><span class="lbl">Burn at \(\theta_b\) (°)</span><input id="tri_thb" type="number" step="any" value="0"></label>
+        <label class="tri-fwd"><span class="lbl">\(\Delta V\) (km/s)</span><input id="tri_dv" type="number" step="any" value="0.5"></label>
+        <label class="tri-fwd"><span class="lbl">\(\psi\) (°)</span><input id="tri_psi" type="number" step="any" value="0"></label>
+        <label class="tri-bwd"><span class="lbl">\(V_f\) (km/s)</span><input id="tri_vf" type="number" step="any" value="8.5"></label>
+        <label class="tri-bwd"><span class="lbl">\(\varphi\) (°)</span><input id="tri_phi" type="number" step="any" value="10"></label>
+      </div>
+      <div class="two">
+        <div id="triOut"></div>
+        <div>
+          <div class="plotbox"><svg id="triPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="triLeg"></div>
+          <div class="plotbox" style="margin-top:8px;min-height:140px"><svg id="triVec" viewBox="0 0 10 5" style="aspect-ratio:2/1"></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Change of apogee / perigee and circularization</h3>
+      <p class="lead">Rule: to change the apogee, burn tangentially at perigee; to change the perigee, burn tangentially at apogee. With vis-viva at the burn radius, \(\Delta V = \lvert V_f - V_i\rvert\), e.g. at perigee \(\Delta V = \sqrt{\tfrac{2\mu}{r_p}}\,\Bigl\lvert \sqrt{1-\tfrac{1}{1+r_{af}/r_p}} - \sqrt{1-\tfrac{1}{1+r_{ai}/r_p}}\Bigr\rvert\). Circularization at perigee: \(\Delta V = \sqrt{\tfrac{\mu}{a}}\,\tfrac{\sqrt{1+e}-1}{\sqrt{1-e}}\).</p>
+      <div class="grid">
+        <label><span class="lbl">Maneuver</span>
+          <select id="aps_mode">
+            <option value="apo">Change apogee (burn at perigee)</option>
+            <option value="peri">Change perigee (burn at apogee)</option>
+            <option value="circP">Circularize at perigee</option>
+            <option value="circA">Circularize at apogee</option>
+          </select></label>
+        <label id="l_aps_target"><span class="lbl">New apogee radius \(r_a\) (km)</span><input id="aps_target" type="number" step="any" value="42164"></label>
+        <label id="l_aps_esc" style="justify-content:flex-end"><span class="lbl"></span><span style="display:flex;align-items:center;gap:6px;color:var(--text)"><input id="aps_escape" type="checkbox"> escape (\(r_a \to \infty\))</span></label>
+      </div>
+      <div class="two">
+        <div id="apsOut"></div>
+        <div><div class="plotbox"><svg id="apsPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="apsLeg"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>General change of coplanar orbit \((a, e, \omega)\)</h3>
+      <p class="lead">The burn must happen at a point common to both orbits:
+      \[\frac{a_i(1-e_i^2)}{1+e_i\cos\theta_i} = \frac{a_f(1-e_f^2)}{1+e_f\cos\theta_f},\qquad \theta_i+\omega_i = \theta_f+\omega_f .\]
+      Writing \(\theta_f = \theta_i - \Delta\omega\) this becomes \(A\sin\theta_i + B\cos\theta_i = C\), solvable only if \(A^2+B^2 \ge C^2\). With \(D=\sqrt{A^2+B^2}\), \(\sin\theta_0 = A/D\), \(\cos\theta_0 = B/D\): \(\theta_i = \theta_0 \pm \arccos(C/D)\), two solutions in general. Then \(\varphi = \gamma_i - \gamma_f\) with \(\tan\gamma = \dfrac{e\sin\theta}{1+e\cos\theta}\).</p>
+      <div class="grid">
+        <label><span class="lbl">\(a_f\) (km)</span><input id="gen_a" type="number" step="any" value="9000"></label>
+        <label><span class="lbl">\(e_f\)</span><input id="gen_e" type="number" step="any" value="0.3"></label>
+        <label><span class="lbl">\(\omega_f\) (°)</span><input id="gen_w" type="number" step="any" value="30"></label>
+        <label><span class="lbl">Animate solution</span><select id="gen_sol"><option value="auto">cheapest</option><option value="1">solution 1</option><option value="2">solution 2</option></select></label>
+      </div>
+      <div class="two">
+        <div id="genOut"></div>
+        <div><div class="plotbox"><svg id="genPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="genLeg"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- TRANSFERS ---------- -->
+  <div class="panel" id="panel-transfer">
+    <div class="card">
+      <h3>Hohmann transfer between circular orbits</h3>
+      <p class="lead">Initial radius \(r_i = a\) from the defined orbit. Two tangential impulses through an ellipse with \(a_H = (r_i + r_f)/2\):
+      \[\Delta V_1 = \sqrt{\frac{2\mu}{r_i}-\frac{\mu}{a_H}} - \sqrt{\frac{\mu}{r_i}},\qquad \Delta V_2 = \sqrt{\frac{\mu}{r_f}} - \sqrt{\frac{2\mu}{r_f}-\frac{\mu}{a_H}},\qquad T_H = \pi\sqrt{\frac{a_H^3}{\mu}} .\]
+      With \(\lambda = r_f/r_i\): \(\dfrac{\Delta V_T}{V_i} = \sqrt{\dfrac{2}{\lambda(1+\lambda)}}\,(\lambda-1) + \sqrt{\dfrac{1}{\lambda}} - 1\), maximum at \(\lambda \approx 15.58\), escape limit \(\sqrt2 - 1\) for \(\lambda\to\infty\). The first impulse is applied at the chosen \(\theta_b\) (position angle on the circular orbit), which becomes the perigee of the transfer ellipse.</p>
+      <div class="grid">
+        <label><span class="lbl">Final circular radius \(r_f\) (km)</span><input id="hoh_rf" type="number" step="any" value="42164"></label>
+        <label><span class="lbl">First impulse at \(\theta_b\) (°)</span><input id="hoh_thb" type="number" step="any" value="0"></label>
+      </div>
+      <div class="two">
+        <div id="hohOut"></div>
+        <div><div class="plotbox"><svg id="hohPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="hohLeg"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Bi-elliptic / bi-parabolic transfer</h3>
+      <p class="lead">Three tangential impulses through two ellipses, \(a_1 = (r_i + r_t)/2\) and \(a_2 = (r_f + r_t)/2\):
+      \[\Delta V_1 = \sqrt{\tfrac{2\mu}{r_i}-\tfrac{\mu}{a_1}} - \sqrt{\tfrac{\mu}{r_i}},\quad \Delta V_2 = \sqrt{\tfrac{2\mu}{r_t}-\tfrac{\mu}{a_2}} - \sqrt{\tfrac{2\mu}{r_t}-\tfrac{\mu}{a_1}},\quad \Delta V_3 = \sqrt{\tfrac{2\mu}{r_f}-\tfrac{\mu}{a_2}} - \sqrt{\tfrac{\mu}{r_f}} .\]
+      With \(\beta = r_t/r_i\) the cost decreases as \(\beta\) grows; for \(\beta\to\infty\) (bi-parabolic) \(\Delta V_T \to V_i(\sqrt2-1)\bigl(1+\sqrt{1/\lambda}\bigr)\). Time: \(T_B = \pi\bigl(\sqrt{a_1^3/\mu}+\sqrt{a_2^3/\mu}\bigr)\). It only beats Hohmann for \(\lambda > 11.94\); for \(\lambda > 15.58\) it always does when \(\beta > \lambda\).</p>
+      <div class="grid">
+        <label><span class="lbl">Final circular radius \(r_f\) (km)</span><input id="bie_rf" type="number" step="any" value="42164"></label>
+        <label><span class="lbl">Intermediate radius \(r_t\) (km)</span><input id="bie_rt" type="number" step="any" value="120000"></label>
+        <label><span class="lbl">First impulse at \(\theta_b\) (°)</span><input id="bie_thb" type="number" step="any" value="0"></label>
+      </div>
+      <div class="two">
+        <div id="bieOut"></div>
+        <div><div class="plotbox"><svg id="biePlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="bieLeg"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Coaxial elliptic ↔ elliptic (or circular) transfer</h3>
+      <p class="lead">Initial orbit = the defined orbit \((a, e)\). The final orbit is coaxial (same \(\omega\)). The two Hohmann-like options connect the apogee of one orbit with the perigee of the other; the optimal rule is to choose the trajectory through the <b>larger apogee</b>.</p>
+      <div class="grid">
+        <label><span class="lbl">Final perigee radius \(r_{pf}\) (km)</span><input id="cox_rp" type="number" step="any" value="20000"></label>
+        <label><span class="lbl">Final apogee radius \(r_{af}\) (km)</span><input id="cox_ra" type="number" step="any" value="42164"></label>
+        <label><span class="lbl">Animate option</span><select id="cox_opt"><option value="auto">cheapest</option><option value="A">A (from initial perigee)</option><option value="B">B (from initial apogee)</option></select></label>
+      </div>
+      <div class="two">
+        <div id="coxOut"></div>
+        <div><div class="plotbox"><svg id="coxPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="coxLeg"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- PLANE CHANGE ---------- -->
+  <div class="panel" id="panel-plane">
+    <div class="card">
+      <h3>Single-impulse plane change \((\Omega, i)\)</h3>
+      <p class="lead">Keep \((a, e, \omega, \theta)\) and rotate the plane, so \(V_f = V_i\). The burn happens on the intersection line of both planes, at latitude \(\phi\):
+      \[\cos\Delta A = \cos i_i\cos i_f + \sin i_i\sin i_f\cos(\Omega_f-\Omega_i),\qquad \sin\phi = \frac{\sin i_i\sin i_f\sin(\Omega_f-\Omega_i)}{\sin\Delta A},\qquad \Delta V = 2V\sin\frac{\Delta A}{2}.\]
+      Special cases: \(\Omega\) only, \(\sin(\Delta A/2) = \sin i\,\sin\bigl((\Omega_f-\Omega_i)/2\bigr)\); \(i\) only, \(\Delta A = i_f - i_i\) at the nodes (\(\phi = 0\)).</p>
+      <div class="radios">
+        <label><input type="radio" name="pcmode" value="gen" checked> General (\(i\) and \(\Omega\))</label>
+        <label><input type="radio" name="pcmode" value="inc"> Inclination only (\(\Omega\) fixed)</label>
+        <label><input type="radio" name="pcmode" value="raan"> RAAN only (\(i\) fixed)</label>
+      </div>
+      <div class="grid">
+        <label><span class="lbl">\(i_f\) (°)</span><input id="pc_if" type="number" step="any" value="51.6"></label>
+        <label><span class="lbl">\(\Omega_f\) (°)</span><input id="pc_Of" type="number" step="any" value="20"></label>
+        <label><span class="lbl">Animate burn at</span><select id="pc_pt"><option value="auto">cheapest point</option><option value="1">point 1</option><option value="2">point 2</option></select></label>
+      </div>
+      <div class="two">
+        <div id="pcOut"></div>
+        <div>
+          <div class="plotbox"><svg id="pcPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="pcLeg"></div>
+          <div class="plotbox" style="margin-top:8px;min-height:160px"><svg id="pcVec" viewBox="0 0 10 5" style="aspect-ratio:2/1"></svg></div><p class="note">Velocity triangle: \(\lvert\vec V_f\rvert = \lvert\vec V_i\rvert\) with angle \(\Delta A\) between them; \(\Delta V\) is the base of the isosceles triangle.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Three-impulse restricted plane change (circular orbit)</h3>
+      <p class="lead">Raise apogee to \(r_2 = \lambda r_1\), change the plane there where the speed is lower, and come back:
+      \[\Delta V_1 = \Delta V_3 = \sqrt{\frac{2\mu}{r_1}-\frac{2\mu}{r_1+r_2}} - \sqrt{\frac{\mu}{r_1}},\qquad \Delta V_2 = 2\sqrt{\frac{2\mu}{r_2}-\frac{2\mu}{r_1+r_2}}\,\sin\frac{\Delta i}{2},\qquad \frac{\Delta V_T}{V_1} = 2\Bigl[\sqrt{\tfrac{2\lambda}{1+\lambda}}\Bigl(1+\tfrac{\sin(\Delta i/2)}{\lambda}\Bigr)-1\Bigr].\]
+      Optimum \(\lambda_{\mathrm{opt}} = \dfrac{\sin(\Delta i/2)}{1-2\sin(\Delta i/2)}\). Rule: \(\Delta i \le 38.94^\circ\) not worth it; \(38.94^\circ < \Delta i \le 60^\circ\) use \(\lambda_{\mathrm{opt}}\); \(\Delta i > 60^\circ\) use \(\lambda\to\infty\).</p>
+      <div class="grid">
+        <label><span class="lbl">\(\Delta i\) (°)</span><input id="t3_di" type="number" step="any" value="50"></label>
+        <label><span class="lbl">\(\lambda = r_2/r_1\)</span><input id="t3_lam" type="number" step="any" value="2"></label>
+        <label><span class="lbl">&nbsp;</span><button class="smallbtn" id="t3_opt">Set \(\lambda = \lambda_{\mathrm{opt}}\)</button></label>
+      </div>
+      <div class="two">
+        <div id="t3Out"></div>
+        <div><div class="plotbox"><svg id="t3Plot" viewBox="0 0 10 10"></svg></div><div class="legend" id="t3Leg"></div><p class="note">The plane change at \(r_2\) must happen on the line of nodes, so the transfer apogee is placed at the ascending node; the first impulse is at the descending node.</p></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Hohmann transfer with plane change</h3>
+      <p class="lead">Combine the radius change and the plane change. The plane change \(\Delta i\) can be applied at the first impulse, the second, or split (fraction \(\alpha\) at the first burn). Each impulse follows the law of cosines:
+      \[\Delta V_1^2 = V_{c1}^2 + V_{t1}^2 - 2V_{c1}V_{t1}\cos(\alpha\,\Delta i),\qquad \Delta V_2^2 = V_{c2}^2 + V_{t2}^2 - 2V_{c2}V_{t2}\cos\bigl((1-\alpha)\Delta i\bigr).\]
+      In practice the whole change is applied at the farther impulse; the exact optimum over \(\alpha\) is also computed.</p>
+      <div class="grid">
+        <label><span class="lbl">Final circular radius \(r_f\) (km)</span><input id="hp_rf" type="number" step="any" value="42164"></label>
+        <label><span class="lbl">\(\Delta i\) (°)</span><input id="hp_di" type="number" step="any" value="28.5"></label>
+        <label><span class="lbl">Custom split \(\alpha\) (fraction at 1st burn)</span><input id="hp_alpha" type="number" step="0.01" min="0" max="1" value="0.1"></label>
+      </div>
+      <div class="two">
+        <div id="hpOut"></div>
+        <div><div class="plotbox"><svg id="hpPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="hpLeg"></div><p class="note">Drawn and animated with the whole plane change at the farther impulse, which is placed on the line of nodes.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- APSIDES ---------- -->
+  <div class="panel" id="panel-apsides">
+    <div class="card">
+      <h3>Rotation of the line of apsides</h3>
+      <p class="lead">Rotate \(\omega\) by \(\Delta\omega\) keeping \(a\) and \(e\), so \(V_f = V_i = \sqrt{2\mu/r-\mu/a}\). The burn is at \(\theta_i = \Delta\omega/2\) (then \(\theta_f = -\Delta\omega/2\)) or at \(\theta_i = \pi + \Delta\omega/2\) (\(\theta_f = \pi - \Delta\omega/2\)). Since \(\gamma_f = -\gamma_i\), \(\varphi = 2\gamma_i\) with \(\tan\gamma_i = \dfrac{e\sin(\Delta\omega/2)}{1+e\cos(\Delta\omega/2)}\), and
+      \[\Delta V = 2V_i\sin\gamma_i = 2e\sqrt{\frac{\mu}{p}}\,\Bigl\lvert\sin\frac{\Delta\omega}{2}\Bigr\rvert ,\]
+      identical for both solutions.</p>
+      <div class="grid">
+        <label><span class="lbl">\(\Delta\omega\) (°)</span><input id="rot_dw" type="number" step="any" value="60"></label>
+        <label><span class="lbl">Animate solution</span><select id="rot_sol"><option value="1">solution 1 (θᵢ = Δω/2)</option><option value="2">solution 2 (θᵢ = 180° + Δω/2)</option></select></label>
+      </div>
+      <div class="two">
+        <div id="rotOut"></div>
+        <div><div class="plotbox"><svg id="rotPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="rotLeg"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- PHASING ---------- -->
+  <div class="panel" id="panel-phasing">
+    <div class="card">
+      <h3>Phasing in a circular orbit</h3>
+      <p class="lead">Interceptor at \(\theta_0\); target on the same orbit, trailing or leading by \(\nu\). The interceptor coasts to \(\theta_b\) (the phase angle is preserved), then enters the phasing orbit. New period \(T_{ph} = T\bigl(1 \mp \tfrac{\nu}{2\pi k}\bigr)\) (− trailing, + leading), then
+      \[a_{ph} = \Bigl(\mu\bigl(\tfrac{T_{ph}}{2\pi}\bigr)^2\Bigr)^{1/3},\qquad \Delta V_1 = \sqrt{\frac{2\mu}{r}-\frac{\mu}{a_{ph}}} - \sqrt{\frac{\mu}{r}},\qquad \Delta V_T = 2\lvert\Delta V_1\rvert ,\]
+      with total maneuver time \(k\,T_{ph}\).</p>
+      <div class="grid">
+        <label><span class="lbl">Phase angle \(\nu\) (°)</span><input id="phc_nu" type="number" step="any" value="15"></label>
+        <label><span class="lbl">Interceptor is</span><select id="phc_case"><option value="trail">trailing (target ahead by ν)</option><option value="lead">leading (target behind by ν)</option></select></label>
+        <label><span class="lbl">Revolutions \(k\)</span><input id="phc_k" type="number" step="1" min="1" value="1"></label>
+        <label><span class="lbl">First impulse at \(\theta_b\) (°)</span><input id="phc_thb" type="number" step="any" value="0"></label>
+      </div>
+      <div class="two">
+        <div id="phcOut"></div>
+        <div><div class="plotbox"><svg id="phcPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="phcLeg"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Phasing in an elliptic orbit</h3>
+      <p class="lead">Angles are not swept uniformly, so phasing is done in time: with the interceptor at \(\theta_A = \theta_0\) and the target at \(\theta_B\), \(t_{AB} = \Delta t(\theta_B) - \Delta t(\theta_A)\) from Kepler's equation and \(T_{ph} = T - t_{AB}/k\). The burn is tangential, preferably at perigee (largest \(V\), so the same \(\Delta V\) produces the largest change in \(a\) and \(T\)):
+      \[\Delta V_1 = \sqrt{\frac{2\mu}{r}-\frac{\mu}{a_{ph}}} - \sqrt{\frac{2\mu}{r}-\frac{\mu}{a}},\qquad \Delta V_T = 2\lvert\Delta V_1\rvert .\]</p>
+      <div class="grid">
+        <label><span class="lbl">Target true anomaly \(\theta_B\) (°)</span><input id="phe_thB" type="number" step="any" value="15"></label>
+        <label><span class="lbl">Revolutions \(k\)</span><input id="phe_k" type="number" step="1" min="1" value="1"></label>
+        <label><span class="lbl">Burn point</span><select id="phe_at"><option value="peri">next perigee</option><option value="here">at θA (immediately)</option></select></label>
+        <label><span class="lbl">Direction</span><select id="phe_dir"><option value="short">shortest (auto)</option><option value="trail">force trailing (Tph &lt; T)</option><option value="lead">force leading (Tph &gt; T)</option></select></label>
+      </div>
+      <div class="two">
+        <div id="pheOut"></div>
+        <div><div class="plotbox"><svg id="phePlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="pheLeg"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. FUEL ============ -->
+<section class="card">
+  <h2>3 · Propellant (Tsiolkovsky)</h2>
+  <p class="lead">\(\Delta V = V_e\ln\dfrac{m_0}{m_0-m_F}\) with \(V_e = I_{sp}\,g_0\), hence \(m_F = m_0\bigl(1-e^{-\Delta V/(I_{sp}g_0)}\bigr)\). For several maneuvers with the same motor the \(\Delta V\) simply add: \(m_{F,\mathrm{total}} = m_0\bigl(1-e^{-\Delta V_T/V_e}\bigr)\). Use the “→ fuel” buttons next to any result to send its \(\Delta V\) here.</p>
+  <div class="grid">
+    <label><span class="lbl">\(I_{sp}\) (s)</span><input id="f_isp" type="number" step="any" value="300"></label>
+    <label><span class="lbl">\(m_0\) initial mass (kg)</span><input id="f_m0" type="number" step="any" value="1000"></label>
+    <label><span class="lbl">\(\Delta V\) (km/s)</span><input id="f_dv" type="number" step="any" value="1"></label>
+    <label><span class="lbl">\(g_0\) (m/s²)</span><input id="f_g0" type="number" step="any" value="9.81"></label>
+  </div>
+  <div id="fuelOut"></div>
+</section>
+
+<footer>Formulas follow Lesson 4 “Orbital Maneuvers” (R. Vázquez Valenzuela, J. C. Sánchez Merino, Universidad de Sevilla). Impulsive (instantaneous \(\Delta V\)) model, two-body dynamics; animations integrate Kepler's equation along each conic. Math rendered with KaTeX.</footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+const D2R = Math.PI/180, R2D = 180/Math.PI, TWO_PI = 2*Math.PI;
+const BODIES = {
+  earth:{mu:398600.4418, R:6378.137},
+  moon:{mu:4902.800066, R:1737.4},
+  mars:{mu:42828.375214, R:3389.5},
+  sun:{mu:1.32712440018e11, R:695700},
+  custom:{mu:398600.4418, R:6378.137}
+};
+const $ = id => document.getElementById(id);
+const val = id => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : NaN; };
+const wrap360 = d => ((d % 360) + 360) % 360;
+const wrap180 = d => { const x = wrap360(d); return x > 180 ? x - 360 : x; };
+const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+const unwrapAfter = (th, from) => th + TWO_PI*Math.ceil((from - th)/TWO_PI - 1e-12); // smallest th + 2πk ≥ from
+const CI = 'var(--c-init)', CF = 'var(--c-final)', C1 = 'var(--c-t1)', C2 = 'var(--c-t2)', CP = 'var(--c-pt)', CS = 'var(--c-sc)', CT = 'var(--c-tg)', CDV = 'var(--c-dv)';
+
+/* ---------- math rendering ---------- */
+const m = (s, ...v) => '\\(' + String.raw(s, ...v) + '\\)';
+const GREEK = { Delta:'Δ', mu:'μ', gamma:'γ', theta:'θ', omega:'ω', Omega:'Ω', psi:'ψ', varphi:'φ', phi:'φ', pi:'π', lambda:'λ', beta:'β', nu:'ν', varepsilon:'ε', epsilon:'ε', alpha:'α', infty:'∞', to:'→', rightarrow:'→', le:'≤', ge:'≥', ne:'≠', pm:'±', mp:'∓', approx:'≈', angle:'∠', cdot:'·', circ:'°', times:'×', ldots:'…', cdots:'⋯', qquad:'   ', quad:'  ' };
+function plainMath(s) {
+  s = s.replace(/\\(text|mathrm|operatorname)\{([^{}]*)\}/g, '$2');
+  for (let k = 0; k < 4; k++) s = s.replace(/\\[td]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1)/($2)');
+  for (let k = 0; k < 3; k++) s = s.replace(/\\sqrt\{([^{}]*)\}/g, '√($1)');
+  s = s.replace(/\\(left|right|Bigl|Bigr|bigl|bigr|,|;|:|!| )/g, ' ').replace(/\\(lvert|rvert|vert)/g, '|');
+  s = s.replace(/\\sqrt\s*(\d+|\\?[A-Za-z]+)/g, '√$1');
+  s = s.replace(/\\([A-Za-z]+)/g, (_, k) => GREEK[k] ?? k);
+  s = s.replace(/Δ\s+(?=[A-Za-z])/g, 'Δ');
+  for (let k = 0; k < 3; k++) s = s.replace(/\^\{([^{}]*)\}/g, '<sup>$1</sup>').replace(/_\{([^{}]*)\}/g, '<sub>$1</sub>');
+  s = s.replace(/\^(\S)/g, '<sup>$1</sup>').replace(/_(\S)/g, '<sub>$1</sub>').replace(/[{}]/g, '');
+  return `<span class="mfb">${s}</span>`;
+}
+function typeset(el) {
+  if (!el) return;
+  if (window.renderMathInElement) {
+    window.renderMathInElement(el, { delimiters: [{ left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }], throwOnError: false, strict: false });
+  } else if (el.innerHTML.indexOf('\\(') >= 0 || el.innerHTML.indexOf('\\[') >= 0) {
+    el.innerHTML = el.innerHTML.replace(/\\\[([\s\S]+?)\\\]/g, (_, s) => '<div class="mfb" style="margin:.4em 0">' + plainMath(s).slice(18, -7) + '</div>').replace(/\\\(([\s\S]+?)\\\)/g, (_, s) => plainMath(s));
+  }
+}
+const out = (id, html) => { const el = $(id); el.innerHTML = html; typeset(el); };
+
+/* ---------- formatting ---------- */
+function f(x, d = 3) {
+  if (!Number.isFinite(x)) return x === Infinity ? '∞' : '—';
+  const ax = Math.abs(x);
+  if (ax !== 0 && (ax >= 1e8 || ax < 1e-4)) return x.toExponential(d);
+  const s = x.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: 0 });
+  return s === '-0' ? '0' : s;
+}
+const kms = (x, d = 4) => Number.isFinite(x) ? `${f(x, d)} km/s <span class="dim">(${f(x*1000, 1)} m/s)</span>` : '—';
+const km = (x, d = 1) => x === Infinity ? '∞' : (Number.isFinite(x) ? `${f(x, d)} km` : '—');
+const deg = (x, d = 3) => Number.isFinite(x) ? `${f(x, d)}°` : '—';
+function fmtTime(s, plain = false) {
+  if (!Number.isFinite(s)) return '—';
+  const sign = s < 0 ? '−' : ''; s = Math.abs(s);
+  const d = Math.floor(s/86400), h = Math.floor((s % 86400)/3600), mi = Math.floor((s % 3600)/60), sec = s % 60;
+  const parts = []; if (d) parts.push(d + ' d'); if (d || h) parts.push(h + ' h'); parts.push(mi + ' min'); parts.push(sec.toFixed(1) + ' s');
+  return plain ? `${sign}${parts.join(' ')}` : `${sign}${parts.join(' ')} <span class="dim">(${f(s, 1)} s)</span>`;
+}
+function rows(arr) {
+  return '<table class="res">' + arr.map(r => {
+    if (r.length === 1) return `<tr><th colspan="2" class="sub">${r[0]}</th></tr>`;
+    return `<tr${r[2] ? ' class="best"' : ''}><td>${r[0]}</td><td>${r[1]}</td></tr>`;
+  }).join('') + '</table>';
+}
+const msg = (t, cls = 'warn') => `<div class="msg ${cls}">${t}</div>`;
+const fuelBtn = dv => Number.isFinite(dv) ? `<button class="usefuel" data-dv="${Math.abs(dv)}" title="Send this ΔV to the propellant card">→ fuel</button>` : '';
+
+/* ---------- orbital mechanics helpers ---------- */
+const vis = (mu, r, a) => Math.sqrt(2*mu/r - (a === Infinity ? 0 : mu/a));
+const rAt = (p, e, th) => p/(1 + e*Math.cos(th));
+const gamAt = (e, th) => Math.atan2(e*Math.sin(th), 1 + e*Math.cos(th));
+const period = (mu, a) => TWO_PI*Math.sqrt(a*a*a/mu);
+function tSincePeri(mu, a, e, th) {
+  const E = 2*Math.atan2(Math.sqrt(1 - e)*Math.sin(th/2), Math.sqrt(1 + e)*Math.cos(th/2));
+  const M = E - e*Math.sin(E); const n = Math.sqrt(mu/(a*a*a)); const T = TWO_PI/n;
+  let t = M/n; t = ((t % T) + T) % T; return t;
+}
+// time from perigee as a continuous (unwrapped) function of θ, for any conic
+function tofPeri(orb, mu, th) {
+  const e = orb.e, p = orb.p;
+  if (e < 1) {
+    const a = p/(1 - e*e), n = Math.sqrt(mu/(a*a*a));
+    const k = Math.floor((th + Math.PI)/TWO_PI), thw = th - k*TWO_PI;
+    const E = 2*Math.atan2(Math.sqrt(1 - e)*Math.sin(thw/2), Math.sqrt(1 + e)*Math.cos(thw/2));
+    return (E - e*Math.sin(E) + k*TWO_PI)/n;
+  }
+  if (e > 1) {
+    const a = p/(1 - e*e), nh = Math.sqrt(mu/Math.pow(-a, 3));
+    const F = 2*Math.atanh(clamp(Math.sqrt((e - 1)/(e + 1))*Math.tan(th/2), -0.999999, 0.999999));
+    return (e*Math.sinh(F) - F)/nh;
+  }
+  const Dp = Math.tan(th/2); return 0.5*Math.sqrt(p*p*p/mu)*(Dp + Dp*Dp*Dp/3);
+}
+function triFwd(Vi, dV, psi) { const x = Vi + dV*Math.cos(psi), y = dV*Math.sin(psi); return { Vf: Math.hypot(x, y), phi: Math.atan2(y, x) }; }
+function triBwd(Vi, Vf, phi) { const x = Vf*Math.cos(phi) - Vi, y = Vf*Math.sin(phi); return { dV: Math.hypot(x, y), psi: Math.atan2(y, x) }; }
+function orbitFromState(mu, r, V, gam) {
+  const eps = V*V/2 - mu/r;
+  const a = Math.abs(eps) < 1e-13 ? Infinity : -mu/(2*eps);
+  const h = r*V*Math.cos(gam); const p = h*h/mu;
+  const e = a === Infinity ? 1 : Math.sqrt(Math.max(0, 1 - p/a));
+  let th = 0;
+  if (e > 1e-9) { th = Math.acos(clamp((p/r - 1)/e, -1, 1)); if (gam < 0) th = -th; }
+  return { a, e, p, th, eps, h };
+}
+const typeOf = e => e < 1 - 1e-9 ? 'elliptic' : (e > 1 + 1e-9 ? 'hyperbolic' : 'parabolic');
+const cross = (u, v) => [u[1]*v[2] - u[2]*v[1], u[2]*v[0] - u[0]*v[2], u[0]*v[1] - u[1]*v[0]];
+const dot = (u, v) => u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+const normal = (i, Om) => [Math.sin(i)*Math.sin(Om), -Math.sin(i)*Math.cos(Om), Math.cos(i)];
+function minimize1D(fn, lo, hi) {
+  const gr = (Math.sqrt(5) - 1)/2; let a = lo, b = hi, c = b - gr*(b - a), d = a + gr*(b - a);
+  for (let k = 0; k < 100; k++) { if (fn(c) < fn(d)) b = d; else a = c; c = b - gr*(b - a); d = a + gr*(b - a); }
+  return (a + b)/2;
+}
+// tangential transfer leg from radius r1 at in-plane position angle A1 to the diametrically opposite point at radius r2
+function transferLeg(r1, A1, r2) {
+  const at = (r1 + r2)/2, et = Math.abs(r2 - r1)/(r1 + r2), pt = at*(1 - et*et);
+  return r2 >= r1 ? { orb: { p: pt, e: et, w: A1 }, th0: 0, th1: Math.PI } : { orb: { p: pt, e: et, w: A1 + Math.PI }, th0: Math.PI, th1: TWO_PI };
+}
+
+/* ---------- animation engine ---------- */
+const ANIM = {};
+const ANIM_REAL_DURATION = 12; // seconds of wall-clock time for the whole maneuver at 1×
+// sample one leg of a trajectory: orb {p,e,w,i?,Om?}, from th0 to th1 (unwrapped, ≥ th0) or for a given duration
+function buildSeg(orb, mu, th0, opt) {
+  const pts = [], ts = []; const t0 = tofPeri(orb, mu, th0); const dth = 0.5*D2R;
+  const thInf = orb.e >= 1 ? (orb.e > 1 ? Math.acos(-1/orb.e) : Math.PI) - 0.03 : Infinity;
+  const thEnd = Math.min(opt.th1 ?? Infinity, thInf), dur = opt.dur ?? Infinity, rclip = opt.rclip ?? Infinity;
+  let th = th0, thLast = th0;
+  for (let k = 0; k < 400000; k++) {
+    const thc = Math.min(th, thEnd); const r = orb.p/(1 + orb.e*Math.cos(thc)); const t = tofPeri(orb, mu, thc) - t0;
+    pts.push([r*Math.cos(thc + orb.w), r*Math.sin(thc + orb.w)]); ts.push(t); thLast = thc;
+    if (thc >= thEnd || t >= dur || r > rclip) break;
+    th += dth;
+  }
+  return { orb, pts, ts, dur: ts[ts.length - 1], th0, thEnd: thLast };
+}
+// legs: [{orb, th0, th1?|dur?|rclip?, label, burnAfter?}] → track with cumulative times and burn events
+// velocity vector (inertial frame) on an orbit at true anomaly th, in the same frame as the plots
+function velECI(orb, mu, th) {
+  const base = CUR || { i: 0, Om: 0 }; const k = Math.sqrt(mu/orb.p), cw = Math.cos(orb.w), sw = Math.sin(orb.w), st = Math.sin(th), ec = orb.e + Math.cos(th);
+  return rotECI(k*(-st*cw - ec*sw), k*(-st*sw + ec*cw), 0, orb.i ?? base.i, orb.Om ?? base.Om);
+}
+function toPlane(v, i, Om) { // inverse of rotECI: inertial → plane frame (x, y in-plane, z normal)
+  const ci = Math.cos(i), si = Math.sin(i), cO = Math.cos(Om), sO = Math.sin(Om);
+  const x1 = v[0]*cO + v[1]*sO, y1 = -v[0]*sO + v[1]*cO, z1 = v[2];
+  return [x1, y1*ci + z1*si, -y1*si + z1*ci];
+}
+function animTrack(mu, legs, color, label) {
+  const base = CUR || { i: 0, Om: 0 }; const segs = [], events = []; let t = 0;
+  legs.forEach((L, k) => {
+    const sg = buildSeg(L.orb, mu, L.th0, L); sg.t0 = t; sg.label = L.label; t += sg.dur; segs.push(sg);
+    if (L.burnAfter && legs[k + 1]) {
+      const vb = velECI(L.orb, mu, sg.thEnd), va = velECI(legs[k + 1].orb, mu, legs[k + 1].th0);
+      const dv3 = [va[0] - vb[0], va[1] - vb[1], va[2] - vb[2]]; const mag = Math.hypot(...dv3);
+      const pl = sg.pts[sg.pts.length - 1]; const i = L.orb.i ?? base.i, Om = L.orb.Om ?? base.Om;
+      events.push({ t, label: L.burnAfter, mag, pos2: pl, dv2: toPlane(dv3, i, Om), pos3: rotECI(pl[0], pl[1], 0, i, Om), dv3 });
+    }
+  });
+  return { segs, events, color, label, total: t };
+}
+function segIndex(sg, tl) { const ts = sg.ts; let lo = 0, hi = ts.length - 1; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (ts[mid] <= tl) lo = mid; else hi = mid; } return [lo, hi]; }
+function trackPos(tr, t) {
+  let sg = tr.segs[tr.segs.length - 1]; for (const s of tr.segs) { if (t <= s.t0 + s.dur) { sg = s; break; } }
+  const tl = clamp(t - sg.t0, 0, sg.dur); const [lo, hi] = segIndex(sg, tl);
+  const fr = sg.ts[hi] > sg.ts[lo] ? (tl - sg.ts[lo])/(sg.ts[hi] - sg.ts[lo]) : 0; const a = sg.pts[lo], b = sg.pts[hi];
+  return { x: a[0] + (b[0] - a[0])*fr, y: a[1] + (b[1] - a[1])*fr, i: sg.orb.i, Om: sg.orb.Om, seg: sg };
+}
+function trackTrail(tr, t) { // traversed polylines up to time t
+  const outp = [];
+  for (const s of tr.segs) { if (t <= s.t0) break; const n = t >= s.t0 + s.dur ? s.pts.length : segIndex(s, t - s.t0)[1] + 1; outp.push({ pts: s.pts.slice(0, n), i: s.orb.i, Om: s.orb.Om }); }
+  return outp;
+}
+let loopOn = false, lastTs = 0;
+function animLoop(ts) {
+  const dt = lastTs ? Math.min((ts - lastTs)/1000, 0.1) : 0; lastTs = ts; let any = false;
+  for (const id in ANIM) {
+    const a = ANIM[id]; if (!a.playing) continue; any = true;
+    if (a.hold > 0) { a.hold -= dt; render(id); continue; }
+    const tNew = a.t + dt*(a.total/ANIM_REAL_DURATION)*a.speed;
+    const ev = a.tracks[0].events.find(e => a.t < e.t && e.t <= tNew);
+    if (ev) { a.t = ev.t; a.hold = 1.0; } else a.t = tNew;
+    if (a.t >= a.total) { a.t = a.total; a.playing = false; }
+    render(id); updateAnimUI(id);
+  }
+  if (any) requestAnimationFrame(animLoop); else { loopOn = false; lastTs = 0; }
+}
+function startLoop() { if (!loopOn) { loopOn = true; lastTs = 0; requestAnimationFrame(animLoop); } }
+function setAnim(id, spec) {
+  const prev = ANIM[id];
+  if (!spec) { delete ANIM[id]; updateAnimUI(id); return; }
+  ANIM[id] = { tracks: spec.tracks, total: Math.max(...spec.tracks.map(t => t.total), 1e-9), t: 0, playing: false, hold: 0, speed: prev ? prev.speed : 1,
+    dvMax: Math.max(1e-9, ...spec.tracks.flatMap(tr => tr.events.map(e => e.mag || 0))) };
+  updateAnimUI(id);
+}
+function updateAnimUI(id) {
+  const svg = $(id); if (!svg) return; const bar = svg.parentElement.querySelector('.anim'); if (!bar) return;
+  const a = ANIM[id]; bar.classList.toggle('on', !!a); if (!a) return;
+  bar.querySelector('.play').textContent = a.playing ? '❚❚ Pause' : (a.t >= a.total ? '▶ Replay' : '▶ Play');
+  bar.querySelector('input[type=range]').value = Math.round(1000*a.t/a.total);
+  bar.querySelector('select').value = String(a.speed);
+  const tr = a.tracks[0]; const pos = trackPos(tr, a.t);
+  const ev = tr.events.map(e => `<span class="ev${a.t >= e.t - 1e-9 ? ' done' : ''}">${e.label} ${a.t >= e.t - 1e-9 ? '✓' : '·'} ${fmtTime(e.t, true)}</span>`).join('');
+  bar.querySelector('.readout').innerHTML = `<b>${pos.seg.label}</b> &nbsp;·&nbsp; t = ${fmtTime(a.t, true)} <span class="dim">of ${fmtTime(a.total, true)}</span><br>${ev}`;
+}
+
+/* ---------- plotting: registry, 2D (SVG) and 3D (canvas) renderers ---------- */
+const PLOTS = {}, PMODE = {}, PVIEW = {};
+let CUR = null; // current global orbit (default plane for plots)
+const DEFVIEW = () => ({ az: -35*D2R, tilt: 55*D2R, zoom: 1 });
+function rotECI(x, y, z, i, Om) { // perifocal-plane coordinates (angle already includes ω) → inertial frame: R3(−Ω)·R1(−i)
+  const ci = Math.cos(i), si = Math.sin(i), cO = Math.cos(Om), sO = Math.sin(Om);
+  const y1 = y*ci - z*si, z1 = y*si + z*ci;
+  return [x*cO - y1*sO, x*sO + y1*cO, z1];
+}
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const resolveColor = c => (typeof c === 'string' && c.startsWith('var(')) ? cssVar(c.slice(4, -1)) : c;
+
+function plot(svgId, legId, orbits, points, R, opts = {}) {
+  PLOTS[svgId] = { orbits, points, R, opts, legId };
+  if (legId && $(legId)) $(legId).innerHTML = orbits.filter(o => o.label).map(o => `<span class="lg"><i style="border-color:${o.color};${o.dash ? 'border-top-style:dashed' : ''}"></i>${o.label}</span>`).join('') + points.filter(p => p.label).map(p => `<span class="lg"><i style="border-color:${p.color};width:10px;border-top-width:6px;border-radius:5px"></i>${p.label}</span>`).join('') + (opts.anim ? opts.anim.tracks.map(t => `<span class="lg"><i style="border-color:${t.color};width:10px;border-top-width:6px;border-radius:5px"></i>${t.label} (animated)</span>`).join('') + `<span class="lg"><i style="border-color:${CDV};border-top-width:3px"></i>ΔV arrow at each burn</span>` : '');
+  setAnim(svgId, opts.anim || null);
+  render(svgId);
+}
+function plotMode(id) { const d = PLOTS[id]; return PMODE[id] || (d && d.opts.default3d ? '3d' : '2d'); }
+function render(id) {
+  const d = PLOTS[id], svg = $(id); if (!d || !svg) return;
+  const box = svg.parentElement, cv = box.querySelector('canvas.c3d'), tools = box.querySelector('.ptools');
+  const mode = cv ? plotMode(id) : '2d';
+  if (tools) { tools.querySelectorAll('[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === mode)); tools.classList.toggle('is3d', mode === '3d'); }
+  svg.style.display = mode === '2d' ? '' : 'none'; if (cv) cv.style.display = mode === '3d' ? '' : 'none';
+  if (mode === '2d') render2d(id); else render3d(id);
+}
+function sampleOrbit(o, rclip, N) {
+  const pts = []; if (!(o.p > 0)) return pts;
+  if (o.e < 1) { for (let k = 0; k <= N; k++) { const th = k/N*TWO_PI, r = o.p/(1 + o.e*Math.cos(th)); pts.push([r*Math.cos(th + o.w), r*Math.sin(th + o.w)]); } }
+  else { const thInf = o.e > 1 ? Math.acos(-1/o.e) : Math.PI; for (let k = 0; k <= N; k++) { const th = -thInf + 2*thInf*k/N; const dn = 1 + o.e*Math.cos(th); if (dn <= 1e-9) continue; const r = o.p/dn; if (r > rclip) continue; pts.push([r*Math.cos(th + o.w), r*Math.sin(th + o.w)]); } }
+  return pts;
+}
+function plotExtent(d) { let Rmax = d.R; d.orbits.forEach(o => { if (o.e < 1 && o.p > 0) Rmax = Math.max(Rmax, o.p/(1 - o.e)); }); d.points.forEach(p => { Rmax = Math.max(Rmax, Math.hypot(p.x, p.y)); }); return Rmax; }
+
+function svgArrow(x1, y1, x2, y2, color, label, ext, alpha) {
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, ux = dx/L, uy = dy/L, hl = ext*0.035;
+  const hx = x2 - ux*hl, hy = y2 - uy*hl;
+  return `<g opacity="${alpha}"><line x1="${x1}" y1="${-y1}" x2="${hx}" y2="${-hy}" stroke="${color}" stroke-width="3" vector-effect="non-scaling-stroke"/>` +
+    `<polygon points="${x2},${-y2} ${hx - uy*hl*0.5},${-(hy + ux*hl*0.5)} ${hx + uy*hl*0.5},${-(hy - ux*hl*0.5)}" fill="${color}"/>` +
+    `<text x="${x2 + ux*ext*0.03}" y="${-(y2 + uy*ext*0.03)}" font-size="${ext*0.045}" font-weight="600" fill="${color}" text-anchor="${ux < -0.3 ? 'end' : (ux > 0.3 ? 'start' : 'middle')}">${label}</text></g>`;
+}
+function render2d(id) {
+  const d = PLOTS[id], svg = $(id); const { orbits, points, R } = d;
+  const rmax = plotExtent(d)*2.2;
+  const polys = orbits.map(o => sampleOrbit(o, rmax, 360));
+  let minx = -R, maxx = R, miny = -R, maxy = R;
+  polys.forEach(pts => pts.forEach(([x, y]) => { minx = Math.min(minx, x); maxx = Math.max(maxx, x); miny = Math.min(miny, y); maxy = Math.max(maxy, y); }));
+  points.forEach(p => { minx = Math.min(minx, p.x); maxx = Math.max(maxx, p.x); miny = Math.min(miny, p.y); maxy = Math.max(maxy, p.y); });
+  const w = maxx - minx, h = maxy - miny, ext = Math.max(w, h), pad = 0.1*ext;
+  const cx = (minx + maxx)/2, cy = (miny + maxy)/2, half = ext/2 + pad;
+  if (!d.vb) d.vb = `${cx - half} ${-(cy + half)} ${2*half} ${2*half}`;
+  svg.setAttribute('viewBox', d.vb);
+  let s = `<circle cx="0" cy="0" r="${R}" class="body"/>`;
+  polys.forEach((pts, k) => {
+    const o = orbits[k]; if (!pts.length) return;
+    const dd = pts.map(([x, y], j) => (j ? 'L' : 'M') + x.toFixed(2) + ' ' + (-y).toFixed(2)).join(' ') + (o.e < 1 ? ' Z' : '');
+    s += `<path d="${dd}" fill="none" stroke="${o.color}" stroke-width="${o.width || 1.8}" vector-effect="non-scaling-stroke"${o.dash ? ' stroke-dasharray="6 4"' : ''}/>`;
+  });
+  points.forEach(p => {
+    s += `<circle cx="${p.x}" cy="${-p.y}" r="${ext*0.013}" fill="${p.color}" stroke="var(--surface)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+    if (p.label) { const left = p.x > cx; s += `<text x="${p.x + (left ? -1 : 1)*ext*0.02}" y="${-p.y - ext*0.02}" font-size="${ext*0.045}" fill="${p.color}" text-anchor="${left ? 'end' : 'start'}">${p.label}</text>`; }
+  });
+  const a = ANIM[id];
+  if (a) a.tracks[0].events.forEach(e => {
+    if (a.t < e.t - 1e-9 || !(e.mag > 0)) return;
+    const alpha = a.t - e.t <= 0.08*a.total ? 1 : 0.4;
+    const L = ext*Math.max(0.08, 0.26*e.mag/a.dvMax); const n = Math.hypot(e.dv2[0], e.dv2[1]) || 1;
+    s += svgArrow(e.pos2[0], e.pos2[1], e.pos2[0] + e.dv2[0]/n*L, e.pos2[1] + e.dv2[1]/n*L, CDV, e.label, ext, alpha);
+  });
+  if (a) a.tracks.forEach((tr, k) => {
+    if (k === 0) trackTrail(tr, a.t).forEach(tl => { if (tl.pts.length > 1) s += `<path d="${tl.pts.map(([x, y], j) => (j ? 'L' : 'M') + x.toFixed(1) + ' ' + (-y).toFixed(1)).join(' ')}" fill="none" stroke="${tr.color}" stroke-width="3.5" opacity=".45" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`; });
+    const pos = trackPos(tr, a.t);
+    s += `<circle cx="${pos.x}" cy="${-pos.y}" r="${ext*(k ? 0.014 : 0.018)}" fill="${tr.color}" stroke="var(--surface)" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+  });
+  svg.innerHTML = s;
+}
+
+function render3d(id) {
+  const d = PLOTS[id], svg = $(id); if (!d || !svg) return;
+  const cv = svg.parentElement.querySelector('canvas.c3d'); if (!cv) return;
+  const W = cv.clientWidth; if (!(W > 0)) return; const H = W, dpr = window.devicePixelRatio || 1;
+  if (cv.width !== Math.round(W*dpr) || cv.height !== Math.round(H*dpr)) { cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  const v = PVIEW[id] || (PVIEW[id] = DEFVIEW()); const base = CUR || { i: 0, Om: 0 };
+  const muted = cssVar('--muted'), surface = cssVar('--surface'), font = cssVar('--font');
+  const Rmax = plotExtent(d), rclip = Rmax*2.2;
+  const ca = Math.cos(v.az), sa = Math.sin(v.az), ct = Math.cos(v.tilt), st = Math.sin(v.tilt);
+  const sc = (W/2 - 16)/Rmax*v.zoom, cx = W/2, cy = H/2;
+  const P = ([x, y, z]) => { const x1 = x*ca - y*sa, y1 = x*sa + y*ca; const y2 = y1*ct + z*st, z2 = -y1*st + z*ct; return [cx + x1*sc, cy - y2*sc, z2, Math.hypot(x1, y2)]; };
+  const hidden = q => q[2] < 0 && q[3] < d.R;
+  const lines = d.orbits.map(o => { const i = o.i ?? base.i, Om = o.Om ?? base.Om; return { o, q: sampleOrbit(o, rclip, 240).map(([x, y]) => P(rotECI(x, y, 0, i, Om))) }; });
+  const strokeRuns = (q, color, width, dash, wantHidden, alpha = 1) => {
+    ctx.save(); ctx.strokeStyle = resolveColor(color); ctx.lineWidth = width; ctx.setLineDash(dash ? [6, 4] : []); ctx.globalAlpha = (wantHidden ? 0.22 : 1)*alpha; ctx.lineJoin = 'round';
+    ctx.beginPath(); let pen = false;
+    for (const pt of q) { if (hidden(pt) === wantHidden) { pen ? ctx.lineTo(pt[0], pt[1]) : ctx.moveTo(pt[0], pt[1]); pen = true; } else pen = false; }
+    ctx.stroke(); ctx.restore();
+  };
+  const Rref = Rmax*1.05;
+  ctx.save(); ctx.beginPath();
+  for (let k = 0; k <= 120; k++) { const ang = k/120*TWO_PI, q = P([Rref*Math.cos(ang), Rref*Math.sin(ang), 0]); k ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }
+  ctx.closePath(); ctx.fillStyle = muted; ctx.globalAlpha = 0.07; ctx.fill(); ctx.globalAlpha = 0.5; ctx.setLineDash([3, 4]); ctx.lineWidth = 1; ctx.strokeStyle = muted; ctx.stroke(); ctx.setLineDash([]);
+  const axis = (vec, label) => { const a0 = P([0, 0, 0]), b = P(vec); ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.moveTo(a0[0], a0[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.globalAlpha = 0.9; ctx.fillStyle = muted; ctx.font = '11px ' + font; ctx.fillText(label, b[0] + 4, b[1] - 4); };
+  axis([Rref, 0, 0], 'x ♈︎'); axis([0, Rref, 0], 'y'); axis([0, 0, Rref*0.85], 'N');
+  ctx.restore();
+  const a = ANIM[id];
+  const trails = a ? trackTrail(a.tracks[0], a.t).map(tl => ({ q: tl.pts.filter((_, j) => j % 2 === 0 || j === tl.pts.length - 1).map(([x, y]) => P(rotECI(x, y, 0, tl.i ?? base.i, tl.Om ?? base.Om))) })) : [];
+  lines.forEach(L => strokeRuns(L.q, L.o.color, L.o.width || 1.8, L.o.dash, true));
+  trails.forEach(tl => strokeRuns(tl.q, a.tracks[0].color, 3.5, false, true, 0.6));
+  const Rb = d.R*sc;
+  const g = ctx.createRadialGradient(cx - Rb*0.35, cy - Rb*0.35, Rb*0.1, cx, cy, Rb); g.addColorStop(0, '#a3aec2'); g.addColorStop(1, '#46505f');
+  ctx.beginPath(); ctx.arc(cx, cy, Rb, 0, TWO_PI); ctx.fillStyle = g; ctx.fill();
+  const sph = fn => { ctx.save(); ctx.strokeStyle = '#e3e8f0'; ctx.globalAlpha = 0.6; ctx.lineWidth = 1; ctx.beginPath(); let pen = false; for (let k = 0; k <= 120; k++) { const q = P(fn(k/120*TWO_PI)); if (q[2] >= 0) { pen ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); pen = true; } else pen = false; } ctx.stroke(); ctx.restore(); };
+  sph(ang => [d.R*Math.cos(ang), d.R*Math.sin(ang), 0]); sph(ang => [d.R*Math.cos(ang), 0, d.R*Math.sin(ang)]);
+  const np = P([0, 0, d.R]); if (np[2] >= 0) { ctx.fillStyle = '#f1f4f9'; ctx.beginPath(); ctx.arc(np[0], np[1], 2.5, 0, TWO_PI); ctx.fill(); }
+  lines.forEach(L => strokeRuns(L.q, L.o.color, L.o.width || 1.8, L.o.dash, false));
+  trails.forEach(tl => strokeRuns(tl.q, a.tracks[0].color, 3.5, false, false, 0.55));
+  ctx.font = '12px ' + font;
+  d.points.forEach(p => {
+    const q = P(rotECI(p.x, p.y, 0, p.i ?? base.i, p.Om ?? base.Om)); const h = hidden(q);
+    ctx.save(); ctx.globalAlpha = h ? 0.35 : 1; ctx.fillStyle = resolveColor(p.color); ctx.strokeStyle = surface; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(q[0], q[1], 4.5, 0, TWO_PI); ctx.fill(); ctx.stroke();
+    if (p.label) { const left = q[0] > W*0.78; ctx.textAlign = left ? 'right' : 'left'; ctx.fillText(p.label, q[0] + (left ? -7 : 7), q[1] - 7); }
+    ctx.restore();
+  });
+  if (a) a.tracks[0].events.forEach(e => {
+    if (a.t < e.t - 1e-9 || !(e.mag > 0)) return;
+    const alpha = a.t - e.t <= 0.08*a.total ? 1 : 0.4;
+    const L = Rmax*Math.max(0.08, 0.26*e.mag/a.dvMax); const n = Math.hypot(...e.dv3) || 1;
+    const q1 = P(e.pos3), q2 = P([e.pos3[0] + e.dv3[0]/n*L, e.pos3[1] + e.dv3[1]/n*L, e.pos3[2] + e.dv3[2]/n*L]);
+    const dx = q2[0] - q1[0], dy = q2[1] - q1[1], Ls = Math.hypot(dx, dy) || 1, ux = dx/Ls, uy = dy/Ls, hl = 10;
+    ctx.save(); ctx.globalAlpha = alpha*(hidden(q1) ? 0.5 : 1); ctx.strokeStyle = ctx.fillStyle = resolveColor(CDV); ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(q1[0], q1[1]); ctx.lineTo(q2[0] - ux*hl, q2[1] - uy*hl); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(q2[0], q2[1]); ctx.lineTo(q2[0] - ux*hl - uy*hl*0.5, q2[1] - uy*hl + ux*hl*0.5); ctx.lineTo(q2[0] - ux*hl + uy*hl*0.5, q2[1] - uy*hl - ux*hl*0.5); ctx.closePath(); ctx.fill();
+    ctx.font = '600 12px ' + font; ctx.textAlign = ux < -0.3 ? 'right' : (ux > 0.3 ? 'left' : 'center'); ctx.fillText(e.label, q2[0] + ux*8, q2[1] + uy*8 + 4); ctx.restore();
+  });
+  if (a) a.tracks.forEach((tr, k) => {
+    const pos = trackPos(tr, a.t); const q = P(rotECI(pos.x, pos.y, 0, pos.i ?? base.i, pos.Om ?? base.Om)); const h = hidden(q);
+    ctx.save(); ctx.globalAlpha = h ? 0.4 : 1; ctx.fillStyle = resolveColor(tr.color); ctx.strokeStyle = surface; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(q[0], q[1], k ? 5 : 6.5, 0, TWO_PI); ctx.fill(); ctx.stroke(); ctx.restore();
+  });
+}
+
+function setupPlotboxes() {
+  document.querySelectorAll('svg[id$="Plot"]').forEach(svg => {
+    const id = svg.id, box = svg.parentElement;
+    const tools = document.createElement('div'); tools.className = 'ptools';
+    tools.innerHTML = `<button data-v="2d" title="Orbital-plane view">2D</button><button data-v="3d" title="Interactive 3D view">3D</button><span class="p3d"><button data-act="top" title="View from the north pole">Top</button><button data-act="edge" title="Edge-on equatorial view">Edge</button><button data-act="reset" title="Default view">Reset</button></span><span class="hint p3d">drag to rotate · wheel to zoom</span>`;
+    const cv = document.createElement('canvas'); cv.className = 'c3d'; cv.style.display = 'none';
+    const bar = document.createElement('div'); bar.className = 'anim';
+    bar.innerHTML = `<button class="play" data-a="play">▶ Play</button><button data-a="reset" title="Back to the start">⟲</button><input type="range" min="0" max="1000" value="0" data-a="scrub" title="Scrub through the maneuver"><select data-a="speed" title="Playback speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select><div class="readout"></div>`;
+    box.prepend(tools); box.appendChild(cv); box.appendChild(bar);
+    PVIEW[id] = DEFVIEW();
+    try { PMODE[id] = localStorage.getItem('om-view-' + id) || null; } catch (e) { PMODE[id] = null; }
+    tools.addEventListener('click', ev => {
+      const b = ev.target.closest('button'); if (!b) return;
+      if (b.dataset.v) { PMODE[id] = b.dataset.v; try { localStorage.setItem('om-view-' + id, b.dataset.v); } catch (e) {} render(id); return; }
+      const vw = PVIEW[id];
+      if (b.dataset.act === 'top') { vw.az = 0; vw.tilt = 0; } else if (b.dataset.act === 'edge') { vw.az = 0; vw.tilt = Math.PI/2; } else Object.assign(vw, DEFVIEW());
+      render3d(id);
+    });
+    bar.addEventListener('click', ev => {
+      const b = ev.target.closest('button'); const a = ANIM[id]; if (!b || !a) return;
+      if (b.dataset.a === 'play') { if (!a.playing && a.t >= a.total) a.t = 0; a.playing = !a.playing; if (a.playing) startLoop(); }
+      else { a.t = 0; a.playing = false; a.hold = 0; }
+      render(id); updateAnimUI(id);
+    });
+    bar.querySelector('input[type=range]').addEventListener('input', ev => { const a = ANIM[id]; if (!a) return; a.playing = false; a.hold = 0; a.t = a.total*ev.target.value/1000; render(id); updateAnimUI(id); });
+    bar.querySelector('select').addEventListener('change', ev => { const a = ANIM[id]; if (a) a.speed = parseFloat(ev.target.value); });
+    let drag = null;
+    cv.addEventListener('pointerdown', ev => { drag = { x: ev.clientX, y: ev.clientY }; cv.setPointerCapture(ev.pointerId); cv.style.cursor = 'grabbing'; ev.preventDefault(); });
+    cv.addEventListener('pointermove', ev => { if (!drag) return; const vw = PVIEW[id]; vw.az += (ev.clientX - drag.x)*0.6*D2R; vw.tilt = clamp(vw.tilt + (ev.clientY - drag.y)*0.6*D2R, -Math.PI, Math.PI); drag = { x: ev.clientX, y: ev.clientY }; render3d(id); });
+    const end = () => { drag = null; cv.style.cursor = 'grab'; };
+    cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+    cv.addEventListener('wheel', ev => { ev.preventDefault(); const vw = PVIEW[id]; vw.zoom = clamp(vw.zoom*Math.exp(-ev.deltaY*0.0007), 0.4, 6); render3d(id); }, { passive: false });
+    cv.addEventListener('dblclick', () => { Object.assign(PVIEW[id], DEFVIEW()); render3d(id); });
+    new ResizeObserver(() => { if (PLOTS[id] && plotMode(id) === '3d' && cv.clientWidth > 0) render3d(id); }).observe(cv);
+  });
+}
+function renderVisiblePlots() { Object.keys(PLOTS).forEach(id => { const el = $(id); if (el && el.closest('.panel.active')) render(id); }); }
+function plotTriangle(svgId, Vi, Vf, phi) {
+  const svg = $(svgId); if (!svg) return;
+  if (![Vi, Vf, phi].every(Number.isFinite)) { svg.innerHTML = ''; return; }
+  const ax = 0, ay = 0, bx = Vi, by = 0, cx = Vf*Math.cos(phi), cy = Vf*Math.sin(phi);
+  const minx = Math.min(ax, bx, cx), maxx = Math.max(ax, bx, cx), miny = Math.min(ay, by, cy), maxy = Math.max(ay, by, cy);
+  const w = Math.max(maxx - minx, 1e-6), h = Math.max(maxy - miny, 1e-6);
+  const ext = Math.max(w, h/2); const pad = 0.18*ext;
+  const vbW = w + 2*pad, vbH = Math.max(h + 2*pad, vbW/2);
+  const x0 = minx - pad, y0 = -(maxy + pad) - (vbH - (h + 2*pad))/2;
+  svg.setAttribute('viewBox', `${x0} ${y0} ${vbW} ${vbH}`);
+  const fs = vbW*0.045;
+  const arrow = (x1, y1, x2, y2, col, lab) => {
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, ux = dx/L, uy = dy/L, hl = vbW*0.03;
+    const hx = x2 - ux*hl, hy = y2 - uy*hl;
+    return `<line x1="${x1}" y1="${-y1}" x2="${x2}" y2="${-y2}" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke"/>` +
+      `<polygon points="${x2},${-y2} ${hx - uy*hl*0.45},${-(hy + ux*hl*0.45)} ${hx + uy*hl*0.45},${-(hy - ux*hl*0.45)}" fill="${col}"/>` +
+      `<text x="${(x1 + x2)/2 + uy*fs*0.8}" y="${-((y1 + y2)/2 - ux*fs*0.8)}" font-size="${fs}" fill="${col}" text-anchor="middle" font-style="italic">${lab}</text>`;
+  };
+  svg.innerHTML = arrow(ax, ay, bx, by, CI, 'Vᵢ') + arrow(ax, ay, cx, cy, CF, 'V𝑓') + arrow(bx, by, cx, cy, C1, 'ΔV');
+}
+
+/* ---------- global orbit ---------- */
+let defMode = 'ae';
+const LBL = { ae: [m`a` + ' (km)', m`e`], rpra: [m`r_p` + ' (km)', m`r_a` + ' (km)'], hpha: [m`h_p` + ' altitude (km)', m`h_a` + ' altitude (km)'] };
+function readOrbit() {
+  const mu = val('mu'), R = val('R'); const x = val('o1'), y = val('o2'); let a, e;
+  if (defMode === 'ae') { a = x; e = y; }
+  else if (defMode === 'rpra') { a = (x + y)/2; e = (y - x)/(y + x); }
+  else { const rp = R + x, ra = R + y; a = (rp + ra)/2; e = (ra - rp)/(ra + rp); }
+  const o = { mu, R, a, e, i: val('inc')*D2R, Om: val('raan')*D2R, w: val('argp')*D2R, th: val('ta')*D2R };
+  o.valid = [mu, R, a, e].every(Number.isFinite) && mu > 0 && a > 0 && e >= 0 && e < 1 && [o.i, o.Om, o.w, o.th].every(Number.isFinite);
+  if (o.valid) {
+    o.p = a*(1 - e*e); o.rp = a*(1 - e); o.ra = a*(1 + e); o.T = period(mu, a); o.n = TWO_PI/o.T;
+    o.r = rAt(o.p, e, o.th); o.V = vis(mu, o.r, a); o.gam = gamAt(e, o.th);
+    o.Vp = vis(mu, o.rp, a); o.Va = vis(mu, o.ra, a); o.eps = -mu/(2*a); o.h = Math.sqrt(mu*o.p);
+    o.circ = e < 1e-6;
+    o.orb = { p: o.p, e: o.e, w: o.w, i: o.i, Om: o.Om }; // for animation legs
+  }
+  return o;
+}
+function setShapeFields(a, e, R) {
+  if (defMode === 'ae') { $('o1').value = +a.toFixed(4); $('o2').value = +e.toFixed(6); }
+  else if (defMode === 'rpra') { $('o1').value = +(a*(1 - e)).toFixed(3); $('o2').value = +(a*(1 + e)).toFixed(3); }
+  else { $('o1').value = +(a*(1 - e) - R).toFixed(3); $('o2').value = +(a*(1 + e) - R).toFixed(3); }
+  out('l_o1', LBL[defMode][0]); out('l_o2', LBL[defMode][1]);
+}
+function updateOrbitCard(o) {
+  if (!o.valid) { out('orbitOut', msg(`Enter a valid closed orbit: ${m`\mu > 0`}, ${m`a > 0`}, ${m`0 \le e < 1`} and finite angles.`, 'bad')); return; }
+  let html = '';
+  if (o.rp <= o.R) html += msg(`Perigee radius (${km(o.rp)}) is below the body surface (${m`R`} = ${km(o.R)}).`, 'bad');
+  html += rows([
+    ['Derived orbit'],
+    [m`p = a(1-e^2)`, km(o.p)], [m`r_p\ /\ h_p`, `${km(o.rp)} / ${km(o.rp - o.R)}`], [m`r_a\ /\ h_a`, `${km(o.ra)} / ${km(o.ra - o.R)}`],
+    [m`T = 2\pi\sqrt{a^3/\mu}`, fmtTime(o.T)], [m`n`, `${f(o.n*R2D*86400, 3)} °/day`], [m`\varepsilon = -\mu/2a`, `${f(o.eps, 4)} km²/s²`], [m`h = \sqrt{\mu p}`, `${f(o.h, 2)} km²/s`],
+    [m`V_p\ /\ V_a`, `${f(o.Vp, 4)} / ${f(o.Va, 4)} km/s`],
+    [`At the current point ${m`\theta_0 = ${f(o.th*R2D, 2)}^\circ`}`],
+    [m`r\ /\ h`, `${km(o.r)} / ${km(o.r - o.R)}`], [m`V`, kms(o.V)], [m`\gamma`, deg(o.gam*R2D)],
+    ['Time since perigee', fmtTime(tSincePeri(o.mu, o.a, o.e, o.th))]
+  ]);
+  out('orbitOut', html);
+}
+// generic "coast on the initial orbit from θ0 to θb" leg
+const coastLeg = (o, thb, label = 'coasting on the initial orbit', burnAfter = 'ΔV') => ({ orb: o.orb, th0: o.th, th1: unwrapAfter(thb, o.th), label, burnAfter });
+
+/* ---------- SINGLE IMPULSE ---------- */
+function updateTriangle(o) {
+  const mode = document.querySelector('input[name="trimode"]:checked').value;
+  document.querySelectorAll('.tri-fwd').forEach(el => el.style.display = mode === 'fwd' ? '' : 'none');
+  document.querySelectorAll('.tri-bwd').forEach(el => el.style.display = mode === 'bwd' ? '' : 'none');
+  const thb = val('tri_thb')*D2R, r = rAt(o.p, o.e, thb), Vb = vis(o.mu, r, o.a), gb = gamAt(o.e, thb);
+  let dV, psi, Vf, phi;
+  if (mode === 'fwd') { dV = val('tri_dv'); psi = val('tri_psi')*D2R; ({ Vf, phi } = triFwd(Vb, dV, psi)); }
+  else { Vf = val('tri_vf'); phi = val('tri_phi')*D2R; ({ dV, psi } = triBwd(Vb, Vf, phi)); }
+  const gamf = gb - phi;
+  const nf = orbitFromState(o.mu, r, Vf, gamf);
+  const wf = o.w + thb - nf.th;
+  const type = typeOf(nf.e);
+  const rpf = nf.p/(1 + nf.e), raf = nf.e < 1 ? nf.p/(1 - nf.e) : Infinity;
+  const deps = Vf*Vf/2 - Vb*Vb/2;
+  let html = '';
+  if (!Number.isFinite(Vf) || Vf <= 0) html += msg(`Resulting ${m`V_f`} is not valid.`, 'bad');
+  if (type !== 'elliptic') html += msg(`The final orbit is <b>${type}</b> (${m`e_f = ${f(nf.e, 4)}`}): the spacecraft escapes.`, 'warn');
+  else if (rpf <= o.R) html += msg(`Final perigee (${km(rpf)}) is below the body surface.`, 'bad');
+  const tCoast = tofPeri(o.orb, o.mu, unwrapAfter(thb, o.th)) - tofPeri(o.orb, o.mu, o.th);
+  html += rows([
+    [`Burn point ${m`\theta_b = ${f(thb*R2D, 2)}^\circ`}`],
+    [`Coast time from ${m`\theta_0`}`, fmtTime(tCoast)],
+    [m`r,\ V_i,\ \gamma_i`, `${f(r, 1)} km, ${f(Vb, 4)} km/s, ${f(gb*R2D, 3)}°`],
+    ['Velocity triangle'],
+    [m`\Delta V,\ \psi`, `${f(dV, 4)} km/s, ${f(wrap180(psi*R2D), 3)}° ${fuelBtn(dV)}`],
+    [m`V_f,\ \varphi`, `${f(Vf, 4)} km/s, ${f(wrap180(phi*R2D), 3)}°`],
+    [`Check: ${m`\sqrt{V_i^2 + V_f^2 - 2V_iV_f\cos\varphi}`}`, `${f(Math.sqrt(Math.max(0, Vb*Vb + Vf*Vf - 2*Vb*Vf*Math.cos(phi))), 4)} km/s`],
+    [m`\gamma_f = \gamma_i - \varphi`, deg(gamf*R2D)],
+    [m`\Delta\varepsilon = \varepsilon_f - \varepsilon_i`, `${f(deps, 5)} km²/s² <span class="dim">(tangential: ${m`\Delta V(2V_i+\Delta V)/2`} = ${f(dV*(2*Vb + dV)/2, 5)})</span>`],
+    ['New orbit'],
+    ['Type', type], [m`a_f`, km(nf.a, 2)], [m`e_f`, f(nf.e, 5)], [m`p_f`, km(nf.p, 2)],
+    [m`r_{p,f}\ /\ r_{a,f}`, `${km(rpf)} / ${km(raf)}`],
+    [m`\theta_f` + ' at the burn point', deg(wrap180(nf.th*R2D))], [m`\omega_f = \omega_i + \theta_b - \theta_f`, deg(wrap360(wf*R2D))],
+    [m`T_f`, nf.e < 1 ? fmtTime(period(o.mu, nf.a)) : '—']
+  ]);
+  out('triOut', html);
+  const orbF = { p: nf.p, e: nf.e, w: wf };
+  const finalLeg = nf.e < 1 ? { orb: orbF, th0: nf.th, th1: nf.th + TWO_PI, label: 'on the new orbit' } : { orb: orbF, th0: nf.th, rclip: 2.2*Math.max(o.ra, r), label: `on the new ${type} orbit (escaping)` };
+  const anim = Number.isFinite(Vf) && Vf > 0 && nf.p > 0 ? { tracks: [animTrack(o.mu, [coastLeg(o, thb), finalLeg], CS, 'spacecraft')] } : null;
+  plot('triPlot', 'triLeg', [
+    { p: o.p, e: o.e, w: o.w, color: CI, label: 'initial orbit' },
+    { p: nf.p, e: nf.e, w: wf, color: CF, label: 'final orbit' }
+  ], [{ x: r*Math.cos(thb + o.w), y: r*Math.sin(thb + o.w), color: CP, label: 'burn' }], o.R, { anim });
+  plotTriangle('triVec', Vb, Vf, phi);
+}
+
+function updateApsides(o) {
+  const mode = $('aps_mode').value; const esc = $('aps_escape').checked && mode === 'apo';
+  const isCirc = mode === 'circP' || mode === 'circA';
+  $('l_aps_target').style.display = isCirc ? 'none' : '';
+  $('l_aps_esc').style.display = mode === 'apo' ? '' : 'none';
+  $('aps_target').disabled = esc;
+  const lbl = $('l_aps_target').querySelector('.lbl'); const want = mode === 'apo' ? 'apo' : 'peri';
+  if (lbl.dataset.mode !== want) { lbl.dataset.mode = want; lbl.innerHTML = mode === 'apo' ? `New apogee radius ${m`r_a`} (km)` : `New perigee radius ${m`r_p`} (km)`; typeset(lbl); }
+  const atPeri = mode === 'apo' || mode === 'circP';
+  const r = atPeri ? o.rp : o.ra, Vi = atPeri ? o.Vp : o.Va, thb = atPeri ? 0 : Math.PI;
+  const rt = val('aps_target');
+  let af, label;
+  if (isCirc) { af = r; label = atPeri ? `Circularize at perigee (braking, ${m`r_a \to r_p`})` : `Circularize at apogee (accelerating, ${m`r_p \to r_a`})`; }
+  else if (esc) { af = Infinity; label = `Escape from perigee (parabolic, ${m`r_a \to \infty`})`; }
+  else { af = (r + rt)/2; label = mode === 'apo' ? `Change apogee at perigee: ${m`r_a`}: ${f(o.ra, 1)} → ${f(rt, 1)} km` : `Change perigee at apogee: ${m`r_p`}: ${f(o.rp, 1)} → ${f(rt, 1)} km`; }
+  const Vf = vis(o.mu, r, af); const dV = Vf - Vi;
+  const ef = af === Infinity ? 1 : Math.abs(af - r)/af;
+  const other = af === Infinity ? Infinity : 2*af - r;
+  const rpf = Math.min(r, other), raf = Math.max(r, other);
+  let html = '';
+  if (!isCirc && !esc && !(rt > 0)) html += msg('Enter a positive target radius.', 'bad');
+  if (Number.isFinite(rpf) && rpf <= o.R) html += msg(`New perigee (${km(rpf)}) is below the body surface.`, 'bad');
+  if (mode === 'apo' && !esc && rt < r) html += msg('Target apogee is smaller than the current perigee: the burn point becomes the new apogee and the target radius the new perigee.', 'warn');
+  if (mode === 'peri' && rt > r) html += msg('Target perigee is larger than the current apogee: the burn point becomes the new perigee and the target radius the new apogee.', 'warn');
+  const closed = atPeri ? Math.sqrt(o.mu/o.a)*(Math.sqrt(1 + o.e) - 1)/Math.sqrt(1 - o.e) : Math.sqrt(o.mu/o.a)*(1 - Math.sqrt(1 - o.e))/Math.sqrt(1 + o.e);
+  const list = [
+    [label],
+    [m`r` + ' (burn radius)', `${km(r)} (${m`\theta_b = ${atPeri ? 0 : 180}^\circ`})`], [m`V_i = \sqrt{2\mu/r - \mu/a_i}`, kms(Vi)], [m`a_f`, km(af, 2)], [m`V_f = \sqrt{2\mu/r - \mu/a_f}`, kms(Vf)],
+    [m`\Delta V = V_f - V_i` + ' (signed, tangential)', `${f(dV, 4)} km/s <span class="dim">(${m`\psi = ${dV >= 0 ? '0^\\circ' : '180^\\circ'}`} ${dV >= 0 ? 'prograde' : 'retrograde'})</span> ${fuelBtn(dV)}`],
+    [m`\lvert\Delta V\rvert`, kms(Math.abs(dV))],
+  ];
+  if (isCirc) list.push([atPeri ? m`\sqrt{\mu/a}\,\dfrac{\sqrt{1+e}-1}{\sqrt{1-e}}` : m`\sqrt{\mu/a}\,\dfrac{1-\sqrt{1-e}}{\sqrt{1+e}}`, kms(closed)]);
+  list.push(['New orbit'], [m`e_f`, f(ef, 5)], [m`r_{p,f}\ /\ r_{a,f}`, `${km(rpf)} / ${km(raf)}`], [m`T_f`, af === Infinity ? '— (parabolic)' : fmtTime(period(o.mu, af))]);
+  html += rows(list);
+  out('apsOut', html);
+  const burnIsPeri = af === Infinity || other >= r;
+  const wf = burnIsPeri ? o.w + thb : o.w + thb + Math.PI;
+  const pf = af === Infinity ? 2*r : af*(1 - ef*ef);
+  const orbF = { p: pf, e: ef, w: wf }; const thF = burnIsPeri ? 0 : Math.PI;
+  const finalLeg = af === Infinity ? { orb: orbF, th0: 0, rclip: 2.2*Math.max(o.ra, r), label: 'escaping on the parabola' } : { orb: orbF, th0: thF, th1: thF + TWO_PI, label: 'on the new orbit' };
+  const anim = Number.isFinite(Vf) ? { tracks: [animTrack(o.mu, [coastLeg(o, thb, atPeri ? 'coasting to perigee' : 'coasting to apogee'), finalLeg], CS, 'spacecraft')] } : null;
+  plot('apsPlot', 'apsLeg', [
+    { p: o.p, e: o.e, w: o.w, color: CI, label: 'initial orbit' },
+    { p: pf, e: ef, w: wf, color: CF, label: 'final orbit' }
+  ], [{ x: r*Math.cos(thb + o.w), y: r*Math.sin(thb + o.w), color: CP, label: 'burn' }], o.R, { anim });
+}
+
+function updateGeneral(o) {
+  const af = val('gen_a'), ef = val('gen_e'), wf = val('gen_w')*D2R, pick = $('gen_sol').value;
+  let html = '';
+  if (!(af > 0) || !(ef >= 0 && ef < 1)) { out('genOut', msg(`Enter ${m`a_f > 0`} and ${m`0 \le e_f < 1`}.`, 'bad')); return; }
+  const pi = o.p, pf = af*(1 - ef*ef), dw = wf - o.w;
+  const A = pi*ef*Math.sin(dw), B = pi*ef*Math.cos(dw) - pf*o.e, C = pf - pi, D = Math.hypot(A, B);
+  const sols = []; let best = null;
+  if (D < 1e-9*Math.max(pi, pf)) {
+    if (Math.abs(C) < 1e-6*Math.max(pi, pf)) html += msg(`Both orbits are circular with the same radius: any point works and ${m`\Delta V = 0`}.`, 'ok');
+    else html += msg('Both orbits are circular (or coaxial with identical shape factors) and have no common point: a transfer with at least two impulses is required (see the Hohmann &amp; bi-elliptic tab).', 'bad');
+  } else if (Math.abs(C) > D*(1 + 1e-12)) {
+    html += msg(`${m`A^2 + B^2 < C^2`} (${m`D = ${f(D, 2)}`}, ${m`\lvert C\rvert = ${f(Math.abs(C), 2)}`}): the orbits do not intersect. A single impulse cannot do it; use a two-impulse transfer.`, 'bad');
+  } else {
+    const th0 = Math.atan2(A, B), ac = Math.acos(clamp(C/D, -1, 1));
+    const cands = Math.abs(ac) < 1e-9 ? [th0] : [th0 + ac, th0 - ac];
+    cands.forEach(thi => {
+      const thf = thi - dw; const r = rAt(pi, o.e, thi); const Vi = vis(o.mu, r, o.a), Vf = vis(o.mu, r, af);
+      const gi = gamAt(o.e, thi), gf = gamAt(ef, thf); const phi = gi - gf; const { dV, psi } = triBwd(Vi, Vf, phi);
+      sols.push({ thi, thf, r, Vi, Vf, gi, gf, phi, dV, psi });
+    });
+    best = sols.reduce((mn, s) => s.dV < mn.dV ? s : mn, sols[0]);
+    html += rows([[`Equation ${m`A\sin\theta_i + B\cos\theta_i = C`}`], [m`A,\ B,\ C`, `${f(A, 2)}, ${f(B, 2)}, ${f(C, 2)}`], [m`D = \sqrt{A^2+B^2},\ C/D`, `${f(D, 2)}, ${f(C/D, 5)}`], [m`\theta_0\ (\sin\theta_0 = A/D,\ \cos\theta_0 = B/D)`, deg(wrap360(th0*R2D))]]);
+    sols.forEach((s, k) => {
+      html += rows([
+        [`Solution ${k + 1}${s === best ? ' — cheapest' : ''}`],
+        [m`\theta_i\ /\ \theta_f`, `${deg(wrap360(s.thi*R2D))} / ${deg(wrap360(s.thf*R2D))}`], [m`r`, km(s.r)],
+        [m`V_i,\ \gamma_i`, `${f(s.Vi, 4)} km/s, ${f(s.gi*R2D, 3)}°`], [m`V_f,\ \gamma_f`, `${f(s.Vf, 4)} km/s, ${f(s.gf*R2D, 3)}°`],
+        [m`\varphi = \gamma_i - \gamma_f`, deg(s.phi*R2D)],
+        [m`\Delta V,\ \psi`, `${f(s.dV, 4)} km/s, ${f(wrap180(s.psi*R2D), 3)}° ${fuelBtn(s.dV)}`, s === best]
+      ]);
+    });
+  }
+  out('genOut', html);
+  const chosen = sols.length ? (pick === 'auto' ? best : (sols[Math.min(sols.length, parseInt(pick)) - 1])) : null;
+  const anim = chosen ? { tracks: [animTrack(o.mu, [coastLeg(o, chosen.thi), { orb: { p: pf, e: ef, w: wf }, th0: chosen.thf, th1: chosen.thf + TWO_PI, label: 'on the final orbit' }], CS, 'spacecraft')] } : null;
+  plot('genPlot', 'genLeg', [
+    { p: pi, e: o.e, w: o.w, color: CI, label: 'initial orbit' },
+    { p: pf, e: ef, w: wf, color: CF, label: 'final orbit' }
+  ], sols.map((s, k) => ({ x: s.r*Math.cos(s.thi + o.w), y: s.r*Math.sin(s.thi + o.w), color: s === chosen ? C1 : CP, label: 'sol. ' + (k + 1) })), o.R, { anim });
+}
+
+/* ---------- TRANSFERS ---------- */
+function updateHohmann(o) {
+  const ri = o.a, rf = val('hoh_rf'), thb = val('hoh_thb')*D2R, mu = o.mu;
+  let html = '';
+  if (!o.circ) html += msg(`The defined orbit has ${m`e = ${f(o.e, 4)}`}; Hohmann formulas assume a circular initial orbit, so ${m`r_i = a`} = ${km(ri)} is used (and animated). For an elliptic initial orbit use the coaxial transfer card below.`, 'warn');
+  if (!(rf > 0)) { out('hohOut', html + msg(`Enter ${m`r_f > 0`}.`, 'bad')); return; }
+  const Vi = Math.sqrt(mu/ri), Vcf = Math.sqrt(mu/rf), lam = rf/ri, aH = (ri + rf)/2;
+  const dv1 = vis(mu, ri, aH) - Vi, dv2 = Vcf - vis(mu, rf, aH), dvT = Math.abs(dv1) + Math.abs(dv2), TH = Math.PI*Math.sqrt(aH**3/mu);
+  const norm = dvT/Vi;
+  if (rf < o.R) html += msg(`${m`r_f`} is below the body surface.`, 'bad');
+  const circI = { p: ri, e: 0, w: o.w }, circF = { p: rf, e: 0, w: o.w };
+  const tCoast = tofPeri(circI, mu, unwrapAfter(thb, o.th)) - tofPeri(circI, mu, o.th);
+  html += rows([
+    ['Hohmann'],
+    [m`r_i \to r_f,\quad \lambda = r_f/r_i`, `${f(ri, 1)} → ${f(rf, 1)} km, λ = ${f(lam, 4)}`], [m`V_i = \sqrt{\mu/r_i},\ V_f = \sqrt{\mu/r_f}`, `${f(Vi, 4)}, ${f(Vcf, 4)} km/s`],
+    [m`a_H,\ e_H`, `${f(aH, 1)} km, ${f(Math.abs(rf - ri)/(rf + ri), 5)}`], [m`V_H(r_i)\ /\ V_H(r_f)`, `${f(vis(mu, ri, aH), 4)} / ${f(vis(mu, rf, aH), 4)} km/s`],
+    [m`\Delta V_1` + ' (signed)', kms(dv1)], [m`\Delta V_2` + ' (signed)', kms(dv2)],
+    [m`\Delta V_T = \lvert\Delta V_1\rvert + \lvert\Delta V_2\rvert`, `${kms(dvT)} ${fuelBtn(dvT)}`],
+    [m`\Delta V_T / V_i`, `${f(norm, 5)} <span class="dim">(escape from ${m`r_i`}: ${m`\sqrt2 - 1 = 0.41421`})</span>`],
+    [m`T_H = \pi\sqrt{a_H^3/\mu}`, fmtTime(TH)],
+    ['Timeline'],
+    [`Coast from ${m`\theta_0`} to ${m`\theta_b = ${f(thb*R2D, 1)}^\circ`}`, fmtTime(tCoast)], [`${m`\Delta V_1`} at`, fmtTime(tCoast)], [`${m`\Delta V_2`} at`, fmtTime(tCoast + TH)]
+  ]);
+  if (lam > 1) html += msg(norm < Math.SQRT2 - 1 ? `Cheaper than direct escape from ${m`r_i`}.` : `More expensive than direct escape from ${m`r_i`} (${m`\lambda`} far from 1; the maximum of the curve is at ${m`\lambda \approx 15.58`}).`, norm < Math.SQRT2 - 1 ? 'ok' : 'warn');
+  out('hohOut', html);
+  const A1 = o.w + thb, leg = transferLeg(ri, A1, rf);
+  const track = animTrack(mu, [
+    { orb: circI, th0: o.th, th1: unwrapAfter(thb, o.th), label: 'coasting on the initial circular orbit', burnAfter: 'ΔV₁' },
+    { orb: leg.orb, th0: leg.th0, th1: leg.th1, label: 'Hohmann transfer ellipse', burnAfter: 'ΔV₂' },
+    { orb: circF, th0: thb + Math.PI, th1: thb + 3*Math.PI, label: 'on the final circular orbit' }
+  ], CS, 'spacecraft');
+  plot('hohPlot', 'hohLeg', [
+    { p: ri, e: 0, w: 0, color: CI, label: 'initial rᵢ' },
+    { p: rf, e: 0, w: 0, color: CF, label: 'final r𝑓' },
+    { ...leg.orb, color: C1, dash: true, label: 'Hohmann ellipse' }
+  ], [{ x: ri*Math.cos(A1), y: ri*Math.sin(A1), color: CP, label: 'ΔV₁' }, { x: -rf*Math.cos(A1), y: -rf*Math.sin(A1), color: CP, label: 'ΔV₂' }], o.R, { anim: { tracks: [track] } });
+}
+
+function updateBielliptic(o) {
+  const ri = o.a, rf = val('bie_rf'), rt = val('bie_rt'), thb = val('bie_thb')*D2R, mu = o.mu;
+  let bh = '';
+  if (!o.circ) bh += msg(`Formulas assume a circular initial orbit; using ${m`r_i = a`} = ${km(ri)}.`, 'warn');
+  if (!(rf > 0)) { out('bieOut', bh + msg(`Enter ${m`r_f > 0`}.`, 'bad')); return; }
+  const rmax = Math.max(ri, rf);
+  if (!(rt > rmax)) { out('bieOut', bh + msg(`${m`r_t`} must exceed both radii (${m`r_t > ${f(rmax, 1)}`} km) for a bi-elliptic transfer.`, 'bad')); return; }
+  const Vi = Math.sqrt(mu/ri), Vcf = Math.sqrt(mu/rf), lam = rf/ri, beta = rt/ri, aH = (ri + rf)/2;
+  const dvT = Math.abs(vis(mu, ri, aH) - Vi) + Math.abs(Vcf - vis(mu, rf, aH)), TH = Math.PI*Math.sqrt(aH**3/mu);
+  const a1 = (ri + rt)/2, a2 = (rf + rt)/2;
+  const b1 = vis(mu, ri, a1) - Vi, b2 = vis(mu, rt, a2) - vis(mu, rt, a1), b3 = Vcf - vis(mu, rf, a2);
+  const T1 = Math.PI*Math.sqrt(a1**3/mu), T2 = Math.PI*Math.sqrt(a2**3/mu);
+  const bT = Math.abs(b1) + Math.abs(b2) + Math.abs(b3), TB = T1 + T2;
+  const bp = Vi*(Math.SQRT2 - 1)*(1 + Math.sqrt(1/lam));
+  const circI = { p: ri, e: 0, w: o.w }, circF = { p: rf, e: 0, w: o.w };
+  const tCoast = tofPeri(circI, mu, unwrapAfter(thb, o.th)) - tofPeri(circI, mu, o.th);
+  bh += rows([
+    ['Bi-elliptic'],
+    [m`r_i \to r_f,\quad \lambda = r_f/r_i`, `${f(ri, 1)} → ${f(rf, 1)} km, λ = ${f(lam, 4)}`],
+    [m`r_t,\quad \beta = r_t/r_i`, `${f(rt, 1)} km, β = ${f(beta, 4)}`], [m`a_1,\ a_2`, `${f(a1, 1)}, ${f(a2, 1)} km`],
+    [m`\Delta V_1` + ' (at ' + m`r_i` + ')', kms(b1)], [m`\Delta V_2` + ' (at ' + m`r_t` + ')', kms(b2)], [m`\Delta V_3` + ' (at ' + m`r_f` + ')', kms(b3)],
+    [m`\Delta V_T`, `${kms(bT)} ${fuelBtn(bT)}`], [m`\Delta V_T / V_i`, f(bT/Vi, 5)],
+    [m`T_B = (T_1 + T_2)/2`, fmtTime(TB)],
+    [`Bi-parabolic limit (${m`\beta \to \infty`})`, `${kms(bp)} <span class="dim">(${f(bp/Vi, 5)} ${m`V_i`})</span>`],
+    ['Comparison with Hohmann for the same ' + m`r_f`],
+    [m`\Delta V_T^{\mathrm{H}},\ T_H`, `${f(dvT, 4)} km/s, ${fmtTime(TH, true)}`],
+    [m`\Delta V_T^{\mathrm{bi}} - \Delta V_T^{\mathrm{H}}`, `${f((bT - dvT)*1000, 2)} m/s (${f((bT/dvT - 1)*100, 2)} %)`, bT < dvT],
+    [m`T_B / T_H`, f(TB/TH, 3)],
+    ['Timeline'],
+    [`Coast from ${m`\theta_0`} to ${m`\theta_b = ${f(thb*R2D, 1)}^\circ`}`, fmtTime(tCoast)], [`${m`\Delta V_1`} at`, fmtTime(tCoast)], [`${m`\Delta V_2`} at`, fmtTime(tCoast + T1)], [`${m`\Delta V_3`} at`, fmtTime(tCoast + TB)]
+  ]);
+  if (lam > 1) {
+    if (lam < 11.94) bh += msg(`${m`\lambda < 11.94`}: no bi-elliptic transfer can beat Hohmann (not even the bi-parabolic limit).`, 'warn');
+    else if (lam <= 15.58) bh += msg(`${m`11.94 \le \lambda \le 15.58`}: a bi-elliptic transfer beats Hohmann only for sufficiently large ${m`\beta`}.`, 'warn');
+    else bh += msg(`${m`\lambda > 15.58`}: the bi-elliptic transfer always beats Hohmann for ${m`\beta > \lambda`}.`, 'ok');
+  }
+  out('bieOut', bh);
+  const A1 = o.w + thb, leg1 = transferLeg(ri, A1, rt), leg2 = transferLeg(rt, A1 + Math.PI, rf);
+  const track = animTrack(mu, [
+    { orb: circI, th0: o.th, th1: unwrapAfter(thb, o.th), label: 'coasting on the initial circular orbit', burnAfter: 'ΔV₁' },
+    { orb: leg1.orb, th0: leg1.th0, th1: leg1.th1, label: 'transfer ellipse 1 (up to r_t)', burnAfter: 'ΔV₂' },
+    { orb: leg2.orb, th0: leg2.th0, th1: leg2.th1, label: 'transfer ellipse 2 (down to r_f)', burnAfter: 'ΔV₃' },
+    { orb: circF, th0: thb, th1: thb + TWO_PI, label: 'on the final circular orbit' }
+  ], CS, 'spacecraft');
+  plot('biePlot', 'bieLeg', [
+    { p: ri, e: 0, w: 0, color: CI, label: 'initial rᵢ' },
+    { p: rf, e: 0, w: 0, color: CF, label: 'final r𝑓' },
+    { ...leg1.orb, color: C1, dash: true, label: 'ellipse 1' },
+    { ...leg2.orb, color: C2, dash: true, label: 'ellipse 2' }
+  ], [{ x: ri*Math.cos(A1), y: ri*Math.sin(A1), color: CP, label: 'ΔV₁' }, { x: -rt*Math.cos(A1), y: -rt*Math.sin(A1), color: CP, label: 'ΔV₂' }, { x: rf*Math.cos(A1), y: rf*Math.sin(A1), color: CP, label: 'ΔV₃' }], o.R, { anim: { tracks: [track] } });
+}
+
+function updateCoaxial(o) {
+  const rpf = val('cox_rp'), raf = val('cox_ra'), mu = o.mu, pick = $('cox_opt').value;
+  let html = '';
+  if (!(rpf > 0) || !(raf >= rpf)) { out('coxOut', msg(`Enter ${m`0 < r_{pf} \le r_{af}`}.`, 'bad')); return; }
+  const af = (rpf + raf)/2, ef = (raf - rpf)/(raf + rpf);
+  const opts = [
+    { key: 'A', name: 'A: initial perigee → final apogee', r1: o.rp, r2: raf, th1: 0, Vi1: o.Vp, Vf2: vis(mu, raf, af), thF: Math.PI },
+    { key: 'B', name: 'B: initial apogee → final perigee', r1: o.ra, r2: rpf, th1: Math.PI, Vi1: o.Va, Vf2: vis(mu, rpf, af), thF: 0 }
+  ];
+  opts.forEach(s => {
+    s.leg = transferLeg(s.r1, o.w + s.th1, s.r2); s.at = (s.r1 + s.r2)/2;
+    s.d1 = vis(mu, s.r1, s.at) - s.Vi1; s.d2 = s.Vf2 - vis(mu, s.r2, s.at); s.T = Math.abs(s.d1) + Math.abs(s.d2); s.time = Math.PI*Math.sqrt(s.at**3/mu);
+  });
+  const best = opts[0].T <= opts[1].T ? opts[0] : opts[1];
+  const chosen = pick === 'auto' ? best : opts.find(s => s.key === pick);
+  const largerApo = Math.max(o.ra, raf);
+  html += rows([['Final orbit'], [m`a_f,\ e_f`, `${f(af, 1)} km, ${f(ef, 5)}`], [m`T_f`, fmtTime(period(mu, af))]]);
+  html += `<table class="cmp"><tr><th>Option</th><th>${m`a_t`}</th><th>${m`\Delta V_1`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th><th>time</th></tr>` +
+    opts.map(s => `<tr${s === best ? ' class="best"' : ''}><td>${s.name}</td><td>${f(s.at, 1)} km</td><td>${f(s.d1, 4)}</td><td>${f(s.d2, 4)}</td><td>${f(s.T, 4)} km/s ${fuelBtn(s.T)}</td><td>${f(s.time/3600, 3)} h</td></tr>`).join('') + '</table>';
+  const ruleOk = best.r1 === largerApo || best.r2 === largerApo;
+  html += msg(`Cheapest: option ${best.key}. Rule check: the transfer through the larger apogee (${km(largerApo)}) is ${ruleOk ? 'indeed the cheaper one' : 'not the cheaper one here (orbits overlap or are nearly equal — check for a single-impulse solution)'}.`, ruleOk ? 'ok' : 'warn');
+  out('coxOut', html);
+  const track = animTrack(mu, [
+    coastLeg(o, chosen.th1, chosen.key === 'A' ? 'coasting to the initial perigee' : 'coasting to the initial apogee', 'ΔV₁'),
+    { orb: chosen.leg.orb, th0: chosen.leg.th0, th1: chosen.leg.th1, label: `transfer ${chosen.key}`, burnAfter: 'ΔV₂' },
+    { orb: { p: af*(1 - ef*ef), e: ef, w: o.w }, th0: chosen.thF, th1: chosen.thF + TWO_PI, label: 'on the final orbit' }
+  ], CS, 'spacecraft');
+  plot('coxPlot', 'coxLeg', [
+    { p: o.p, e: o.e, w: o.w, color: CI, label: 'initial orbit' },
+    { p: af*(1 - ef*ef), e: ef, w: o.w, color: CF, label: 'final orbit (coaxial)' },
+    { ...opts[0].leg.orb, color: C1, dash: true, label: 'transfer A' },
+    { ...opts[1].leg.orb, color: C2, dash: true, label: 'transfer B' }
+  ], [
+    { x: o.rp*Math.cos(o.w), y: o.rp*Math.sin(o.w), color: CP, label: 'A₁' }, { x: -raf*Math.cos(o.w), y: -raf*Math.sin(o.w), color: CP, label: 'A₂' },
+    { x: -o.ra*Math.cos(o.w), y: -o.ra*Math.sin(o.w), color: CP, label: 'B₁' }, { x: rpf*Math.cos(o.w), y: rpf*Math.sin(o.w), color: CP, label: 'B₂' }
+  ], o.R, { anim: { tracks: [track] } });
+}
+
+/* ---------- PLANE CHANGE ---------- */
+function updatePlane(o) {
+  const mode = document.querySelector('input[name="pcmode"]:checked').value, pick = $('pc_pt').value;
+  $('pc_Of').disabled = mode === 'inc'; $('pc_if').disabled = mode === 'raan';
+  if (mode === 'inc') $('pc_Of').value = +(o.Om*R2D).toFixed(4);
+  if (mode === 'raan') $('pc_if').value = +(o.i*R2D).toFixed(4);
+  const iF = val('pc_if')*D2R, OmF = val('pc_Of')*D2R;
+  const ni = normal(o.i, o.Om), nf = normal(iF, OmF), L = cross(ni, nf);
+  const sinA = Math.hypot(...L), cosA = clamp(dot(ni, nf), -1, 1), dA = Math.atan2(sinA, cosA);
+  let html = '';
+  const dOm = OmF - o.Om, dI = iF - o.i;
+  html += rows([['Planes'], [m`i_i \to i_f`, `${deg(o.i*R2D)} → ${deg(iF*R2D)}`], [m`\Omega_i \to \Omega_f`, `${deg(o.Om*R2D)} → ${deg(OmF*R2D)}`], [m`\Delta A` + ' (angle between planes)', deg(dA*R2D, 4)]]);
+  const orbI = { p: o.p, e: o.e, w: o.w, i: o.i, Om: o.Om, color: CI, label: 'initial orbit' }, orbF = { p: o.p, e: o.e, w: o.w, i: iF, Om: OmF, color: CF, label: 'final orbit (same a, e, ω)' };
+  if (dA < 1e-9) { html += msg(`Same orbital plane: no maneuver needed (${m`\Delta V = 0`}).`, 'ok'); out('pcOut', html); plotTriangle('pcVec', o.V, o.V, 0); plot('pcPlot', 'pcLeg', [orbI, orbF], [], o.R, { default3d: true }); return; }
+  const l = L.map(x => x/sinA);
+  const Ni = [Math.cos(o.Om), Math.sin(o.Om), 0], Mi = cross(ni, Ni);
+  const u1 = Math.atan2(dot(l, Mi), dot(l, Ni));
+  const cands = [{ u: u1, lat: Math.asin(clamp(l[2], -1, 1)) }, { u: u1 + Math.PI, lat: -Math.asin(clamp(l[2], -1, 1)) }];
+  cands.forEach(c => { c.th = c.u - o.w; c.r = rAt(o.p, o.e, c.th); c.V = vis(o.mu, c.r, o.a); c.dV = 2*c.V*Math.sin(dA/2); });
+  const best = cands[0].dV <= cands[1].dV ? cands[0] : cands[1];
+  const chosen = pick === 'auto' ? best : cands[parseInt(pick) - 1];
+  const slideLat = Math.asin(clamp(Math.sin(o.i)*Math.sin(iF)*Math.sin(dOm)/sinA, -1, 1));
+  const list = [['Intersection of the planes (two antipodal points)']];
+  cands.forEach((c, k) => list.push([`Point ${k + 1}: ${m`\phi,\ u = \omega + \theta,\ \theta`}`, `${f(c.lat*R2D, 3)}°, ${f(wrap360(c.u*R2D), 3)}°, ${f(wrap360(c.th*R2D), 3)}°`]));
+  list.push([m`\sin\phi = \dfrac{\sin i_i\sin i_f\sin\Delta\Omega}{\sin\Delta A}` + ' (slide formula)', deg(slideLat*R2D)]);
+  if (mode === 'inc') list.push([`Check: ${m`\Delta A = \lvert i_f - i_i\rvert`}, nodes at ${m`\phi = 0`}`, `${deg(Math.abs(dI)*R2D, 4)}`]);
+  if (mode === 'raan') list.push([`Check: ${m`\sin(\Delta A/2) = \sin i\,\sin(\Delta\Omega/2)`}`, `ΔA = ${deg(2*Math.asin(clamp(Math.abs(Math.sin(o.i)*Math.sin(dOm/2)), 0, 1))*R2D, 4)}`]);
+  list.push([m`\Delta V = 2V\sin(\Delta A/2)` + ' at each point']);
+  cands.forEach((c, k) => list.push([`Point ${k + 1}: ${m`r,\ V,\ \Delta V`}`, `${f(c.r, 1)} km, ${f(c.V, 4)} km/s, <b>${f(c.dV, 4)} km/s</b> ${fuelBtn(c.dV)}`, c === best]));
+  list.push([m`\Delta V` + ' direction', `${m`\psi = 90^\circ + \Delta A/2 = ${f(90 + dA*R2D/2, 3)}^\circ`} in the plane of ${m`(\vec V_i, \vec V_f)`}`]);
+  list.push([`Coast from ${m`\theta_0`} to the animated burn point (point ${cands.indexOf(chosen) + 1})`, fmtTime(tofPeri(o.orb, o.mu, unwrapAfter(chosen.th, o.th)) - tofPeri(o.orb, o.mu, o.th))]);
+  html += rows(list);
+  if (o.circ) html += msg('Circular orbit: both intersection points cost the same.', 'ok');
+  else html += msg(`Non-circular orbit: burn at the point with lower speed (point ${best === cands[0] ? 1 : 2}, larger ${m`r`}).`, 'ok');
+  out('pcOut', html);
+  plotTriangle('pcVec', best.V, best.V, dA);
+  const thA = unwrapAfter(chosen.th, o.th);
+  const track = animTrack(o.mu, [
+    { orb: o.orb, th0: o.th, th1: thA, label: 'coasting on the initial orbit', burnAfter: 'ΔV (plane change)' },
+    { orb: { p: o.p, e: o.e, w: o.w, i: iF, Om: OmF }, th0: thA, th1: thA + TWO_PI, label: 'on the final orbit (new plane)' }
+  ], CS, 'spacecraft');
+  plot('pcPlot', 'pcLeg', [orbI, orbF], cands.map((c, k) => ({ x: c.r*Math.cos(c.u), y: c.r*Math.sin(c.u), color: c === chosen ? C1 : CP, label: `point ${k + 1}${c === best ? ' (cheapest)' : ''}` })), o.R, { default3d: true, anim: { tracks: [track] } });
+}
+
+function updateThree(o) {
+  const di = val('t3_di')*D2R, lam = val('t3_lam'), mu = o.mu, r1 = o.a, V1 = Math.sqrt(mu/r1);
+  let html = '';
+  if (!o.circ) html += msg(`Formulas assume a circular orbit; using ${m`r_1 = a`} = ${km(r1)}.`, 'warn');
+  const s = Math.sin(di/2), single = 2*V1*s;
+  const lamOpt = s < 0.5 ? s/(1 - 2*s) : Infinity;
+  const diDeg = di*R2D;
+  const rule = diDeg <= 38.94 ? `${m`\Delta i \le 38.94^\circ`}: the three-impulse maneuver is not worth it (${m`\lambda_{\mathrm{opt}} \le 1`}); use the single impulse.` : (diDeg <= 60 ? `${m`38.94^\circ < \Delta i \le 60^\circ`}: use ${m`\lambda = \lambda_{\mathrm{opt}} = ${f(lamOpt, 4)}`}.` : `${m`\Delta i > 60^\circ`}: use ${m`\lambda`} as large as possible (bi-parabolic limit).`);
+  const costAt = L => { const r2 = L*r1, at = (r1 + r2)/2; const d1 = vis(mu, r1, at) - V1, d2 = 2*vis(mu, r2, at)*s; return { d1, d2, T: 2*Math.abs(d1) + d2, at, r2 }; };
+  if (!(lam >= 1)) html += msg(`${m`\lambda`} must be ≥ 1 (${m`r_2 \ge r_1`}).`, 'bad');
+  const c = costAt(lam);
+  html += rows([
+    ['Single impulse (reference)'], [m`V_1,\quad \Delta V = 2V_1\sin(\Delta i/2)`, `${f(V1, 4)} km/s, ${f(single, 4)} km/s ${fuelBtn(single)}`],
+    [`Three impulses with ${m`\lambda = ${f(lam, 4)}`}`],
+    [m`r_2 = \lambda r_1,\ a_t`, `${f(c.r2, 1)} km, ${f(c.at, 1)} km`], [m`\Delta V_1 = \Delta V_3` + ' (tangential)', kms(c.d1)], [m`\Delta V_2` + ' (plane change at ' + m`r_2` + ')', kms(c.d2)],
+    [m`\Delta V_T = 2\Delta V_1 + \Delta V_2`, `${kms(c.T)} ${fuelBtn(c.T)}`, c.T < single], [m`\Delta V_T / V_1` + ' (formula)', f(2*(Math.sqrt(2*lam/(1 + lam))*(1 + s/lam) - 1), 5)],
+    ['Saving vs single impulse', `${f((single - c.T)*1000, 2)} m/s (${f((1 - c.T/single)*100, 2)} %)`],
+    ['Total time (two half ellipses)', fmtTime(2*Math.PI*Math.sqrt(c.at**3/mu))],
+    ['Optimum'], [m`\lambda_{\mathrm{opt}} = \dfrac{\sin(\Delta i/2)}{1 - 2\sin(\Delta i/2)}`, f(lamOpt, 4)], [m`\lambda \to \infty:\ \Delta V_T \to 2V_1(\sqrt2 - 1)`, kms(2*V1*(Math.SQRT2 - 1))]
+  ]);
+  html += msg(rule, diDeg <= 38.94 ? 'warn' : 'ok');
+  const grid = [1, 1.5, 2, 3, 5, 10, 20, 50];
+  if (Number.isFinite(lamOpt) && lamOpt > 1) grid.push(lamOpt);
+  grid.sort((a, b) => a - b);
+  html += `<table class="cmp"><tr><th>${m`\lambda`}</th><th>${m`\Delta V_1 = \Delta V_3`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th><th>${m`\Delta V_T/V_1`}</th></tr>` + grid.map(L => { const q = costAt(L); return `<tr${L === lamOpt ? ' class="best"' : ''}><td>${f(L, 3)}${L === lamOpt ? ' (opt)' : ''}</td><td>${f(q.d1, 4)}</td><td>${f(q.d2, 4)}</td><td>${f(q.T, 4)}</td><td>${f(q.T/V1, 4)}</td></tr>`; }).join('') + `<tr><td>∞</td><td>${f(V1*(Math.SQRT2 - 1), 4)}</td><td>0</td><td>${f(2*V1*(Math.SQRT2 - 1), 4)}</td><td>${f(2*(Math.SQRT2 - 1), 4)}</td></tr></table>`;
+  out('t3Out', html);
+  if (lam >= 1) {
+    const et = (c.r2 - r1)/(c.r2 + r1), pt = c.at*(1 - et*et), iF = o.i + di;
+    const circI = { p: r1, e: 0, w: o.w, i: o.i, Om: o.Om }, circF = { p: r1, e: 0, w: o.w, i: iF, Om: o.Om };
+    const ell1 = { p: pt, e: et, w: Math.PI, i: o.i, Om: o.Om }, ell2 = { p: pt, e: et, w: Math.PI, i: iF, Om: o.Om };
+    const thNode = unwrapAfter(Math.PI - o.w, o.th); // descending node (u = 180°) on the circular orbit
+    const track = animTrack(mu, [
+      { orb: circI, th0: o.th, th1: thNode, label: 'coasting to the descending node', burnAfter: 'ΔV₁' },
+      { orb: ell1, th0: 0, th1: Math.PI, label: 'transfer ellipse 1 (raising apogee)', burnAfter: 'ΔV₂ (plane change)' },
+      { orb: ell2, th0: Math.PI, th1: TWO_PI, label: 'transfer ellipse 2 (returning, new plane)', burnAfter: 'ΔV₃' },
+      { orb: circF, th0: Math.PI - o.w, th1: 3*Math.PI - o.w, label: 'on the final circular orbit (i + Δi)' }
+    ], CS, 'spacecraft');
+    plot('t3Plot', 't3Leg', [
+      { p: r1, e: 0, w: 0, i: o.i, Om: o.Om, color: CI, label: 'initial orbit (i)' },
+      { ...ell1, color: C1, dash: true, label: 'transfer ellipse 1' },
+      { ...ell2, color: C2, dash: true, label: 'transfer ellipse 2 (i + Δi)' },
+      { p: r1, e: 0, w: 0, i: iF, Om: o.Om, color: CF, label: 'final orbit (i + Δi)' }
+    ], [
+      { x: -r1, y: 0, i: o.i, Om: o.Om, color: CP, label: 'ΔV₁' }, { x: c.r2, y: 0, i: o.i, Om: o.Om, color: CP, label: 'ΔV₂ (node)' }, { x: -r1, y: 0, i: iF, Om: o.Om, color: CP, label: 'ΔV₃' }
+    ], o.R, { default3d: true, anim: { tracks: [track] } });
+  }
+  $('t3_opt').onclick = () => { if (Number.isFinite(lamOpt) && lamOpt > 1) { $('t3_lam').value = +lamOpt.toFixed(4); update(); } };
+}
+
+function updateHohPlane(o) {
+  const ri = o.a, rf = val('hp_rf'), di = val('hp_di')*D2R, alphaC = clamp(val('hp_alpha'), 0, 1), mu = o.mu;
+  let html = '';
+  if (!o.circ) html += msg(`Using ${m`r_i = a`} = ${km(ri)} (circular assumption).`, 'warn');
+  if (!(rf > 0)) { out('hpOut', html + msg(`Enter ${m`r_f > 0`}.`, 'bad')); return; }
+  const aH = (ri + rf)/2, Vc1 = Math.sqrt(mu/ri), Vc2 = Math.sqrt(mu/rf), Vt1 = vis(mu, ri, aH), Vt2 = vis(mu, rf, aH);
+  const cost = al => { const d1 = Math.sqrt(Vc1*Vc1 + Vt1*Vt1 - 2*Vc1*Vt1*Math.cos(al*di)), d2 = Math.sqrt(Vc2*Vc2 + Vt2*Vt2 - 2*Vc2*Vt2*Math.cos((1 - al)*di)); return { d1, d2, T: d1 + d2 }; };
+  const farther = rf >= ri ? 0 : 1, nearer = 1 - farther;
+  const alOpt = minimize1D(al => cost(al).T, 0, 1);
+  const hoh = Math.abs(Vt1 - Vc1) + Math.abs(Vc2 - Vt2);
+  const sep = hoh + 2*(rf >= ri ? Vc2 : Vc1)*Math.sin(di/2);
+  const strategies = [
+    { name: `All at the farther impulse (${m`\alpha = ${farther}`})`, al: farther },
+    { name: `All at the nearer impulse (${m`\alpha = ${nearer}`})`, al: nearer },
+    { name: `Optimal split (${m`\alpha = ${f(alOpt, 4)}`})`, al: alOpt },
+    { name: `Custom split (${m`\alpha = ${f(alphaC, 3)}`})`, al: alphaC }
+  ].map(s => ({ ...s, ...cost(s.al) }));
+  const best = strategies.reduce((mn, s) => s.T < mn.T ? s : mn, strategies[0]);
+  html += rows([['Geometry'], [m`r_i \to r_f,\ \Delta i`, `${f(ri, 1)} → ${f(rf, 1)} km, ${deg(di*R2D)}`], [m`V_{c1},\ V_{t1}` + ' (at ' + m`r_i` + ')', `${f(Vc1, 4)}, ${f(Vt1, 4)} km/s`], [m`V_{t2},\ V_{c2}` + ' (at ' + m`r_f` + ')', `${f(Vt2, 4)}, ${f(Vc2, 4)} km/s`],
+    ['Pure Hohmann (no plane change)', kms(hoh)], ['Separate maneuvers: Hohmann + plane change on the farther circular orbit', `${kms(sep)} ${fuelBtn(sep)}`]]);
+  html += `<table class="cmp"><tr><th>Strategy</th><th>${m`\Delta i`} at 1st</th><th>${m`\Delta i`} at 2nd</th><th>${m`\Delta V_1`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th></tr>` + strategies.map(s => `<tr${s === best ? ' class="best"' : ''}><td>${s.name}</td><td>${f(s.al*di*R2D, 3)}°</td><td>${f((1 - s.al)*di*R2D, 3)}°</td><td>${f(s.d1, 4)}</td><td>${f(s.d2, 4)}</td><td>${f(s.T, 4)} km/s ${fuelBtn(s.T)}</td></tr>`).join('') + '</table>';
+  html += msg(`Applying the whole plane change at the farther impulse costs ${f((strategies[0].T - strategies[2].T)*1000, 2)} m/s more than the exact optimum, and saves ${f((sep - strategies[0].T)*1000, 2)} m/s versus doing the two maneuvers separately.`, 'ok');
+  out('hpOut', html);
+  const eH = Math.abs(rf - ri)/(rf + ri), pH = aH*(1 - eH*eH), iF = o.i + di, up = rf >= ri;
+  const circI = { p: ri, e: 0, w: o.w, i: o.i, Om: o.Om }, circF = { p: rf, e: 0, w: o.w, i: iF, Om: o.Om };
+  const ell = { p: pH, e: eH, w: Math.PI, i: up ? o.i : iF, Om: o.Om };
+  const thNode = unwrapAfter(Math.PI - o.w, o.th);
+  const track = animTrack(mu, [
+    { orb: circI, th0: o.th, th1: thNode, label: 'coasting to the descending node', burnAfter: up ? 'ΔV₁' : 'ΔV₁ + plane change' },
+    { orb: ell, th0: up ? 0 : Math.PI, th1: up ? Math.PI : TWO_PI, label: up ? 'Hohmann ellipse (initial plane)' : 'Hohmann ellipse (final plane)', burnAfter: up ? 'ΔV₂ + plane change' : 'ΔV₂' },
+    { orb: circF, th0: -o.w, th1: TWO_PI - o.w, label: 'on the final circular orbit (i + Δi)' }
+  ], CS, 'spacecraft');
+  plot('hpPlot', 'hpLeg', [
+    { p: ri, e: 0, w: 0, i: o.i, Om: o.Om, color: CI, label: 'initial orbit (i)' },
+    { ...ell, color: C1, dash: true, label: up ? 'Hohmann ellipse (initial plane)' : 'Hohmann ellipse (final plane)' },
+    { p: rf, e: 0, w: 0, i: iF, Om: o.Om, color: CF, label: 'final orbit (i + Δi)' }
+  ], [
+    { x: -ri, y: 0, i: o.i, Om: o.Om, color: CP, label: up ? 'ΔV₁' : 'ΔV₁ + plane change (node)' },
+    { x: rf, y: 0, i: iF, Om: o.Om, color: CP, label: up ? 'ΔV₂ + plane change (node)' : 'ΔV₂' }
+  ], o.R, { default3d: true, anim: { tracks: [track] } });
+}
+
+/* ---------- APSIDES ROTATION ---------- */
+function updateRotation(o) {
+  const dw = val('rot_dw')*D2R, pick = parseInt($('rot_sol').value) - 1;
+  let html = '';
+  if (o.circ) html += msg(`The defined orbit is circular: it has no line of apsides, so ${m`\Delta\omega`} has no effect (${m`\Delta V = 0`}). Set ${m`e > 0`} in the orbit card.`, 'warn');
+  const closed = 2*o.e*Math.sqrt(o.mu/o.p)*Math.abs(Math.sin(dw/2));
+  const sols = [{ thi: dw/2, thf: -dw/2 }, { thi: Math.PI + dw/2, thf: Math.PI - dw/2 }].map(s => {
+    s.r = rAt(o.p, o.e, s.thi); s.V = vis(o.mu, s.r, o.a); s.gi = gamAt(o.e, s.thi); s.gf = gamAt(o.e, s.thf); s.phi = s.gi - s.gf;
+    const t = triBwd(s.V, s.V, s.phi); s.dV = t.dV; s.psi = t.psi; return s;
+  });
+  html += rows([['Closed form'], [m`\Delta V = 2e\sqrt{\mu/p}\,\lvert\sin(\Delta\omega/2)\rvert`, `${kms(closed)} ${fuelBtn(closed)}`], [m`\omega_i \to \omega_f`, `${deg(o.w*R2D)} → ${deg(wrap360((o.w + dw)*R2D))}`]]);
+  sols.forEach((s, k) => html += rows([
+    [`Solution ${k + 1}`],
+    [m`\theta_i\ /\ \theta_f`, `${deg(wrap360(s.thi*R2D))} / ${deg(wrap360(s.thf*R2D))}`], [m`r,\quad V = V_i = V_f`, `${f(s.r, 1)} km, ${f(s.V, 4)} km/s`],
+    [m`\gamma_i,\quad \gamma_f = -\gamma_i`, `${f(s.gi*R2D, 4)}°, ${f(s.gf*R2D, 4)}°`], [m`\varphi = 2\gamma_i`, deg(s.phi*R2D, 4)],
+    [m`\Delta V = 2V\sin\gamma_i,\quad \psi`, `${f(s.dV, 4)} km/s, ${f(wrap180(s.psi*R2D), 3)}°`],
+    [`Coast from ${m`\theta_0`} to ${m`\theta_i`}`, fmtTime(tofPeri(o.orb, o.mu, unwrapAfter(s.thi, o.th)) - tofPeri(o.orb, o.mu, o.th))]
+  ]));
+  out('rotOut', html);
+  const chosen = sols[pick] || sols[0];
+  const track = animTrack(o.mu, [coastLeg(o, chosen.thi), { orb: { p: o.p, e: o.e, w: o.w + dw }, th0: chosen.thf, th1: chosen.thf + TWO_PI, label: 'on the rotated orbit' }], CS, 'spacecraft');
+  plot('rotPlot', 'rotLeg', [
+    { p: o.p, e: o.e, w: o.w, color: CI, label: 'initial orbit' },
+    { p: o.p, e: o.e, w: o.w + dw, color: CF, label: 'rotated orbit' }
+  ], sols.map((s, k) => ({ x: s.r*Math.cos(s.thi + o.w), y: s.r*Math.sin(s.thi + o.w), color: s === chosen ? C1 : CP, label: 'sol. ' + (k + 1) })), o.R, { anim: { tracks: [track] } });
+}
+
+/* ---------- PHASING ---------- */
+function updatePhasingCirc(o) {
+  const nu = val('phc_nu')*D2R, cs = $('phc_case').value, k = Math.max(1, Math.round(val('phc_k') || 1)), thb = val('phc_thb')*D2R, mu = o.mu, r = o.a;
+  let html = '';
+  if (!o.circ) html += msg(`Formulas assume a circular orbit; using ${m`r = a`} = ${km(r)} (and animating on that circle). See the elliptic card for the exact case.`, 'warn');
+  const T = period(mu, r), sign = cs === 'trail' ? -1 : 1;
+  const Tph = T*(1 + sign*nu/(TWO_PI*k));
+  const aph = Math.cbrt(mu*(Tph/TWO_PI)**2);
+  const Vc = Math.sqrt(mu/r), dv1 = vis(mu, r, aph) - Vc, other = 2*aph - r;
+  const circ = { p: r, e: 0, w: o.w };
+  const tCoast = tofPeri(circ, mu, unwrapAfter(thb, o.th)) - tofPeri(circ, mu, o.th);
+  if (!(Tph > 0)) html += msg(`${m`T_{ph} \le 0`}: ${m`\nu/(2\pi k)`} must be smaller than 1.`, 'bad');
+  if (other <= o.R) html += msg(`The phasing orbit perigee (${km(other)}) is below the body surface: increase ${m`k`} or use a leading solution.`, 'bad');
+  html += rows([
+    [cs === 'trail' ? `Trailing: target ahead by ${m`\nu`} → faster (lower) phasing orbit` : `Leading: target behind by ${m`\nu`} → slower (higher) phasing orbit`],
+    [m`T` + ' (common orbit)', fmtTime(T)], [m`T_{ph} = T\bigl(1 ${sign < 0 ? '-' : '+'} \tfrac{\nu}{2\pi k}\bigr)`, fmtTime(Tph)], [m`a_{ph}`, km(aph, 2)],
+    [`Phasing orbit ${sign < 0 ? m`r_a = r,\ r_p` : m`r_p = r,\ r_a`}`, `${km(r)}, ${km(other)}`], [m`e_{ph}`, f(Math.abs(other - r)/(other + r), 5)],
+    [m`\Delta V_1` + ' (tangential, signed)', kms(dv1)], [m`\Delta V_T = 2\lvert\Delta V_1\rvert`, `${kms(2*Math.abs(dv1))} ${fuelBtn(2*Math.abs(dv1))}`],
+    ['Timeline'],
+    [`Coast from ${m`\theta_0`} to ${m`\theta_b`}`, fmtTime(tCoast)], [`Phasing time ${m`k\,T_{ph}`}`, fmtTime(k*Tph)], ['Rendezvous at', fmtTime(tCoast + k*Tph)]
+  ]);
+  out('phcOut', html);
+  const eph = Math.abs(other - r)/(other + r), pph = aph*(1 - eph*eph);
+  const A1 = o.w + thb;
+  const ph = sign < 0 ? { orb: { p: pph, e: eph, w: A1 + Math.PI }, th0: Math.PI, th1: Math.PI + TWO_PI*k } : { orb: { p: pph, e: eph, w: A1 }, th0: 0, th1: TWO_PI*k };
+  const trackSc = animTrack(mu, [
+    { orb: circ, th0: o.th, th1: unwrapAfter(thb, o.th), label: 'coasting to the burn point', burnAfter: 'ΔV₁' },
+    { ...ph, label: `${k} revolution${k > 1 ? 's' : ''} on the phasing orbit`, burnAfter: 'ΔV₂ (rendezvous)' },
+    { orb: circ, th0: thb, th1: thb + TWO_PI, label: 'back on the common orbit, together with the target' }
+  ], CS, 'interceptor');
+  const trackTg = animTrack(mu, [{ orb: circ, th0: o.th + (cs === 'trail' ? nu : -nu), dur: trackSc.total, label: 'target' }], CT, 'target');
+  plot('phcPlot', 'phcLeg', [
+    { p: r, e: 0, w: 0, color: CI, label: 'common orbit' },
+    { ...ph.orb, color: C1, dash: true, label: 'phasing orbit' }
+  ], [{ x: r*Math.cos(A1), y: r*Math.sin(A1), color: CP, label: 'burns' }], o.R, { anim: { tracks: [trackSc, trackTg] } });
+}
+
+function updatePhasingEll(o) {
+  const thB = val('phe_thB')*D2R, k = Math.max(1, Math.round(val('phe_k') || 1)), at = $('phe_at').value, dir = $('phe_dir').value, mu = o.mu;
+  const T = o.T, tA = tSincePeri(mu, o.a, o.e, o.th), tB = tSincePeri(mu, o.a, o.e, thB);
+  let tAB = tB - tA;
+  if (dir === 'short') { tAB = ((tAB % T) + T) % T; if (tAB > T/2) tAB -= T; }
+  else if (dir === 'trail') { tAB = ((tAB % T) + T) % T; }
+  else { tAB = ((tAB % T) + T) % T; if (tAB > 0) tAB -= T; }
+  const Tph = T - tAB/k, aph = Math.cbrt(mu*(Tph/TWO_PI)**2);
+  const r = at === 'peri' ? o.rp : o.r, thb = at === 'peri' ? 0 : o.th, gam = at === 'peri' ? 0 : o.gam;
+  const Vi = vis(mu, r, o.a), Vph = vis(mu, r, aph), dv1 = Vph - Vi;
+  const ph = orbitFromState(mu, r, Vph, gam); const wph = o.w + thb - ph.th; const rpph = ph.p/(1 + ph.e);
+  const thBurn = at === 'peri' ? unwrapAfter(0, o.th) : o.th;
+  const tCoast = tofPeri(o.orb, mu, thBurn) - tofPeri(o.orb, mu, o.th);
+  let html = '';
+  if (o.circ) html += msg(`Circular orbit: the result coincides with the circular phasing card (${m`\Delta t`} is proportional to the angle).`, 'ok');
+  if (Math.abs(tAB) < 1e-6) html += msg('Interceptor and target coincide: nothing to do.', 'ok');
+  const feasible = Tph > 0 && aph > r/2 && ph.e < 1;
+  if (!feasible) html += msg(`${m`T_{ph}`} is too small: no orbit through ${m`r`} with that period. Increase ${m`k`}.`, 'bad');
+  else if (rpph <= o.R) html += msg(`Phasing orbit perigee (${km(rpph)}) is below the body surface: increase ${m`k`} or change direction.`, 'bad');
+  html += rows([
+    ['Timing on the common orbit'],
+    [m`T`, fmtTime(T)], [`${m`\Delta t(\theta_A)`} from perigee (interceptor at ${m`\theta_A = \theta_0 = ${f(o.th*R2D, 2)}^\circ`})`, fmtTime(tA)], [m`\Delta t(\theta_B)` + ' from perigee', fmtTime(tB)],
+    [m`t_{AB} = \Delta t(\theta_B) - \Delta t(\theta_A)`, `${fmtTime(tAB)} <span class="dim">(${tAB > 0 ? 'trailing, ' + m`T_{ph} < T` : (tAB < 0 ? 'leading, ' + m`T_{ph} > T` : '')})</span>`],
+    ['Phasing orbit'],
+    [m`T_{ph} = T - t_{AB}/k`, fmtTime(Tph)], [m`a_{ph}`, km(aph, 2)], [m`e_{ph},\ \omega_{ph}`, `${f(ph.e, 5)}, ${deg(wrap360(wph*R2D))}`], [m`r_{p,ph}\ /\ r_{a,ph}`, `${km(rpph)} / ${km(ph.e < 1 ? ph.p/(1 - ph.e) : Infinity)}`],
+    [`Burn point ${m`r`} (${at === 'peri' ? 'perigee' : m`\theta_A`})`, km(r)], [m`V = \sqrt{2\mu/r - \mu/a}` + ' (original orbit)', kms(Vi)], [m`V_{ph} = \sqrt{2\mu/r - \mu/a_{ph}}`, kms(Vph)],
+    [m`\Delta V_1` + ' (tangential, signed)', kms(dv1)], [m`\Delta V_T = 2\lvert\Delta V_1\rvert`, `${kms(2*Math.abs(dv1))} ${fuelBtn(2*Math.abs(dv1))}`],
+    ['Timeline'],
+    ['Coast to the burn point', fmtTime(tCoast)], [`Phasing time ${m`k\,T_{ph}`}`, fmtTime(k*Tph)], ['Rendezvous at', fmtTime(tCoast + k*Tph)]
+  ]);
+  out('pheOut', html);
+  const rB = rAt(o.p, o.e, thB);
+  let anim = null;
+  if (feasible) {
+    const phOrb = { p: ph.p, e: ph.e, w: wph };
+    const legs = [];
+    if (tCoast > 1e-9) legs.push({ orb: o.orb, th0: o.th, th1: thBurn, label: 'coasting to perigee', burnAfter: 'ΔV₁' });
+    legs.push({ orb: phOrb, th0: ph.th, th1: ph.th + TWO_PI*k, label: `${k} revolution${k > 1 ? 's' : ''} on the phasing orbit`, burnAfter: 'ΔV₂ (rendezvous)' });
+    legs.push({ orb: o.orb, th0: thb, th1: thb + TWO_PI, label: 'back on the common orbit, together with the target' });
+    if (tCoast <= 1e-9) { legs[0].label = 'ΔV₁ applied immediately; ' + legs[0].label; }
+    const trackSc = animTrack(mu, legs, CS, 'interceptor');
+    const trackTg = animTrack(mu, [{ orb: o.orb, th0: thB, dur: trackSc.total, label: 'target' }], CT, 'target');
+    anim = { tracks: [trackSc, trackTg] };
+  }
+  plot('phePlot', 'pheLeg', [
+    { p: o.p, e: o.e, w: o.w, color: CI, label: 'common orbit' },
+    { p: ph.p, e: ph.e, w: wph, color: C1, dash: true, label: 'phasing orbit' }
+  ], [
+    { x: o.r*Math.cos(o.th + o.w), y: o.r*Math.sin(o.th + o.w), color: CP, label: 'A (θ₀)' },
+    { x: rB*Math.cos(thB + o.w), y: rB*Math.sin(thB + o.w), color: CF, label: 'B' },
+    { x: r*Math.cos(thb + o.w), y: r*Math.sin(thb + o.w), color: C1, label: at === 'peri' ? 'burns (perigee)' : '' }
+  ], o.R, { anim });
+}
+
+/* ---------- FUEL ---------- */
+function updateFuel() {
+  const isp = val('f_isp'), m0 = val('f_m0'), dv = val('f_dv'), g0 = val('f_g0');
+  if (![isp, m0, dv, g0].every(Number.isFinite) || isp <= 0 || m0 <= 0 || g0 <= 0) { out('fuelOut', msg(`Enter positive ${m`I_{sp}`}, ${m`m_0`}, ${m`g_0`} and a ${m`\Delta V`}.`, 'bad')); return; }
+  const Ve = isp*g0/1000; const ratio = Math.exp(-Math.abs(dv)/Ve); const mF = m0*(1 - ratio);
+  out('fuelOut', rows([[m`V_e = I_{sp}\,g_0`, kms(Ve)], [m`m_f/m_0 = e^{-\Delta V/V_e}`, f(ratio, 5)], [m`m_F = m_0(1 - e^{-\Delta V/V_e})`, `${f(mF, 2)} kg (${f(100*mF/m0, 2)} % of ${m`m_0`})`], [m`m_0 - m_F`, `${f(m0 - mF, 2)} kg`]]));
+}
+
+/* ---------- master update ---------- */
+function update() {
+  const o = readOrbit();
+  CUR = o.valid ? o : CUR;
+  Object.keys(PLOTS).forEach(id => { delete PLOTS[id].vb; });
+  updateOrbitCard(o);
+  const steps = o.valid ? [updateTriangle, updateApsides, updateGeneral, updateHohmann, updateBielliptic, updateCoaxial, updatePlane, updateThree, updateHohPlane, updateRotation, updatePhasingCirc, updatePhasingEll] : [];
+  steps.forEach(fn => { try { fn(o); } catch (err) { console.error(fn.name, err); } });
+  if (!o.valid) ['triOut','apsOut','genOut','hohOut','bieOut','coxOut','pcOut','t3Out','hpOut','rotOut','phcOut','pheOut'].forEach(id => out(id, msg('Define a valid orbit first.', 'warn')));
+  updateFuel();
+}
+
+/* ---------- wiring ---------- */
+function typesetStatic() {
+  document.querySelectorAll('header p, h3, p.lead, p.note, label > span.lbl, .radios label, footer, #t3_opt, #l_aps_esc').forEach(typeset);
+}
+function init() {
+  $('body').value = 'earth'; $('mu').value = BODIES.earth.mu; $('R').value = BODIES.earth.R;
+  $('o1').value = 6878.137; $('o2').value = 0; $('inc').value = 28.5; $('raan').value = 0; $('argp').value = 0; $('ta').value = 300;
+  typesetStatic();
+  setupPlotboxes();
+  $('body').addEventListener('change', () => { const b = BODIES[$('body').value]; if ($('body').value !== 'custom') { $('mu').value = b.mu; $('R').value = b.R; } update(); });
+  ['mu', 'R'].forEach(id => $(id).addEventListener('input', () => { $('body').value = 'custom'; }));
+  $('defmode').addEventListener('change', () => { const o = readOrbit(); const a = o.valid ? o.a : 7000, e = o.valid ? o.e : 0; defMode = $('defmode').value; setShapeFields(a, e, Number.isFinite(o.R) ? o.R : 6378.137); update(); });
+  document.querySelectorAll('input:not([data-a]), select:not([data-a])').forEach(el => { el.addEventListener('input', update); el.addEventListener('change', update); });
+  document.querySelectorAll('.tabs button').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + btn.dataset.tab));
+    renderVisiblePlots();
+    try { localStorage.setItem('om-tab', btn.dataset.tab); } catch (e) {}
+  }));
+  try { const t = localStorage.getItem('om-tab'); if (t) { const b = document.querySelector(`.tabs button[data-tab="${t}"]`); if (b) b.click(); } } catch (e) {}
+  document.body.addEventListener('click', ev => {
+    const b = ev.target.closest('.usefuel'); if (!b) return;
+    $('f_dv').value = +parseFloat(b.dataset.dv).toFixed(5); updateFuel();
+    $('f_dv').animate([{ outline: '3px solid var(--accent)' }, { outline: '0 solid transparent' }], { duration: 900 });
+  });
+  const applyTheme = t => { if (t) document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme'); };
+  try { applyTheme(localStorage.getItem('om-theme')); } catch (e) {}
+  $('themeBtn').addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark'; applyTheme(next); try { localStorage.setItem('om-theme', next); } catch (e) {}
+    renderVisiblePlots();
+  });
+  window.onKatexReady = () => { typesetStatic(); update(); };
+  update();
+}
+init();
+})();
+</script>
+</body>
+</html>
