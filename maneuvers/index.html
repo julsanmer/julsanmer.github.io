@@ -93,7 +93,6 @@ table.cmp tr.best td{background:var(--ok-bg);color:var(--ok-fg);font-weight:600}
 .plotbox svg text{font-family:var(--font)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.82rem;color:var(--muted);margin-top:6px}
 .legend .lg i{display:inline-block;width:22px;border-top:2px solid;vertical-align:middle;margin-right:6px}
-.usefuel{font:inherit;font-size:.75rem;padding:1px 7px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--accent);cursor:pointer;margin-left:6px}
 .smallbtn{font:inherit;font-size:.82rem;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
 footer{color:var(--muted);font-size:.8rem;margin:20px 0 10px}
 hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
@@ -125,7 +124,7 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
 <header>
   <div>
     <h1>Orbital Maneuvers Calculator</h1>
-    <p>Impulsive maneuvers from Lesson 4 of Orbital Dynamics. Define the central body and the initial orbit once (including the spacecraft's current true anomaly \(\theta_0\)), then explore each maneuver family. Every orbit plot can be switched to an interactive 3D view (drag to rotate, wheel to zoom) and played as a time animation from \(\theta_0\) through each impulse. Velocities in km/s, distances in km, angles in degrees.</p>
+    <p>Impulsive maneuvers from Lesson 4 of Orbital Dynamics. Define the central body, the initial orbit and the spacecraft (\(I_{sp}\), \(m_0\)) once (including the initial true anomaly \(\theta_0\)), then explore each maneuver family. Every orbit plot can be switched to an interactive 3D view (drag to rotate, wheel to zoom) and played as a time animation from \(\theta_0\) through each impulse. Velocities in km/s, distances in km, angles in degrees.</p>
   </div>
   <button class="iconbtn" id="themeBtn" title="Toggle light/dark">◐ Theme</button>
 </header>
@@ -150,6 +149,12 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
     <label><span class="lbl">\(\Omega\), RAAN (°)</span><input id="raan" type="number" step="any"></label>
     <label><span class="lbl">\(\omega\), arg. of perigee (°)</span><input id="argp" type="number" step="any"></label>
     <label><span class="lbl">\(\theta_0\), initial true anomaly (°)</span><input id="ta" type="number" step="any"></label>
+  </div>
+  <p class="note" style="margin-top:12px">Spacecraft, for the propellant estimate of every maneuver (Tsiolkovsky): \(\Delta V = V_e\ln\dfrac{m_0}{m_0-m_F}\) with \(V_e = I_{sp}\,g_0\), hence \(m_F = m_0\bigl(1-e^{-\Delta V/V_e}\bigr)\). For several impulses with the same motor the \(\Delta V\) simply add.</p>
+  <div class="grid">
+    <label><span class="lbl">\(I_{sp}\) (s)</span><input id="f_isp" type="number" step="any" value="300"></label>
+    <label><span class="lbl">\(m_0\), initial mass (kg)</span><input id="f_m0" type="number" step="any" value="1000"></label>
+    <label><span class="lbl">\(g_0\) (m/s²)</span><input id="f_g0" type="number" step="any" value="9.81"></label>
   </div>
   <div id="orbitOut"></div>
 </section>
@@ -390,19 +395,6 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </section>
 
-<!-- ============ 3. FUEL ============ -->
-<section class="card">
-  <h2>3 · Propellant (Tsiolkovsky)</h2>
-  <p class="lead">\(\Delta V = V_e\ln\dfrac{m_0}{m_0-m_F}\) with \(V_e = I_{sp}\,g_0\), hence \(m_F = m_0\bigl(1-e^{-\Delta V/(I_{sp}g_0)}\bigr)\). For several maneuvers with the same motor the \(\Delta V\) simply add: \(m_{F,\mathrm{total}} = m_0\bigl(1-e^{-\Delta V_T/V_e}\bigr)\). Use the “→ fuel” buttons next to any result to send its \(\Delta V\) here.</p>
-  <div class="grid">
-    <label><span class="lbl">\(I_{sp}\) (s)</span><input id="f_isp" type="number" step="any" value="300"></label>
-    <label><span class="lbl">\(m_0\) initial mass (kg)</span><input id="f_m0" type="number" step="any" value="1000"></label>
-    <label><span class="lbl">\(\Delta V\) (km/s)</span><input id="f_dv" type="number" step="any" value="1"></label>
-    <label><span class="lbl">\(g_0\) (m/s²)</span><input id="f_g0" type="number" step="any" value="9.81"></label>
-  </div>
-  <div id="fuelOut"></div>
-</section>
-
 <footer>Formulas follow Lesson 4 “Orbital Maneuvers” (R. Vázquez Valenzuela, J. C. Sánchez Merino, Universidad de Sevilla). Impulsive (instantaneous \(\Delta V\)) model, two-body dynamics; animations integrate Kepler's equation along each conic. Math rendered with KaTeX.</footer>
 </div>
 
@@ -480,7 +472,23 @@ function rows2(title, arr) {
   return rows([[title]]) + `<div class="two res2">${rows(arr.slice(0, half))}${rows(arr.slice(half))}</div>`;
 }
 const msg = (t, cls = 'warn') => `<div class="msg ${cls}">${t}</div>`;
-const fuelBtn = dv => Number.isFinite(dv) ? `<button class="usefuel" data-dv="${Math.abs(dv)}" title="Send this ΔV to the propellant card">→ fuel</button>` : '';
+/* ---------- propellant (Tsiolkovsky) ---------- */
+function propellant() {
+  const isp = val('f_isp'), m0 = val('f_m0'), g0 = val('f_g0');
+  const ok = [isp, m0, g0].every(Number.isFinite) && isp > 0 && m0 > 0 && g0 > 0;
+  return { ok, isp, m0, g0, Ve: ok ? isp*g0/1000 : NaN };
+}
+const mFuel = dv => { const p = propellant(); return p.ok && Number.isFinite(dv) ? p.m0*(1 - Math.exp(-Math.abs(dv)/p.Ve)) : NaN; };
+const mFcell = dv => { const mF = mFuel(dv); return Number.isFinite(mF) ? `${f(mF, 1)} kg` : '—'; };
+// one result row with the propellant mass needed for a ΔV
+const mFrow = (dv, label = m`m_F` + ' (propellant)') => { const p = propellant(), mF = mFuel(dv); return [label, Number.isFinite(mF) ? `${f(mF, 2)} kg <span class="dim">(${f(100*mF/p.m0, 2)} % of ${m`m_0`})</span>` : '—']; };
+// a 'Propellant' section for a maneuver's total ΔV
+function fuelRows(dv) {
+  const p = propellant();
+  if (!p.ok) return msg(`Enter positive ${m`I_{sp}`}, ${m`m_0`} and ${m`g_0`} in the spacecraft fields to estimate the propellant.`, 'warn');
+  const mF = mFuel(dv);
+  return rows([['Propellant (Tsiolkovsky)'], [m`m_F = m_0\bigl(1 - e^{-\Delta V_T/V_e}\bigr)`, `${f(mF, 2)} kg <span class="dim">(${f(100*mF/p.m0, 2)} % of ${m`m_0`})</span>`], [m`m_0 - m_F` + ' (final mass)', `${f(p.m0 - mF, 2)} kg`]]);
+}
 
 /* ---------- orbital mechanics helpers ---------- */
 const vis = (mu, r, a) => Math.sqrt(2*mu/r - (a === Infinity ? 0 : mu/a));
@@ -859,6 +867,8 @@ function updateOrbitCard(o) {
     [m`r\ /\ h`, `${km(o.r)} / ${km(o.r - o.R)}`], [m`V`, kms(o.V)], [m`\gamma`, deg(o.gam*R2D)],
     ['Time since perigee', fmtTime(tSincePeri(o.mu, o.a, o.e, o.th))]
   ]);
+  const sc = propellant();
+  html += rows([['Spacecraft'], [m`V_e = I_{sp}\,g_0`, sc.ok ? kms(sc.Ve) : '—'], [m`m_F` + ' per 1 km/s of ' + m`\Delta V`, sc.ok ? `${f(mFuel(1), 2)} kg` : '—']]);
   out('orbitOut', html);
 }
 // generic "coast on the initial orbit from θ0 to θb" leg
@@ -889,7 +899,7 @@ function updateTriangle(o) {
     [`Coast time from ${m`\theta_0`}`, fmtTime(tCoast)],
     [m`r,\ V_i,\ \gamma_i`, `${f(r, 1)} km, ${f(Vb, 4)} km/s, ${f(gb*R2D, 3)}°`],
     ['Velocity triangle'],
-    [m`\Delta V,\ \psi`, `${f(dV, 4)} km/s, ${f(wrap180(psi*R2D), 3)}° ${fuelBtn(dV)}`],
+    [m`\Delta V,\ \psi`, `${f(dV, 4)} km/s, ${f(wrap180(psi*R2D), 3)}°`],
     [m`V_f,\ \varphi`, `${f(Vf, 4)} km/s, ${f(wrap180(phi*R2D), 3)}°`],
     [`Check: ${m`\sqrt{V_i^2 + V_f^2 - 2V_iV_f\cos\varphi}`}`, `${f(Math.sqrt(Math.max(0, Vb*Vb + Vf*Vf - 2*Vb*Vf*Math.cos(phi))), 4)} km/s`],
     [m`\gamma_f = \gamma_i + \varphi`, deg(gamf*R2D)],
@@ -900,6 +910,7 @@ function updateTriangle(o) {
     [m`\theta_f` + ' at the burn point', deg(wrap180(nf.th*R2D))], [m`\omega_f = \omega_i + \theta_b - \theta_f`, deg(wrap360(wf*R2D))],
     [m`T_f`, nf.e < 1 ? fmtTime(period(o.mu, nf.a)) : '—']
   ]);
+  html += fuelRows(dV);
   out('triOut', html);
   const orbF = { p: nf.p, e: nf.e, w: wf };
   const finalLeg = nf.e < 1 ? { orb: orbF, th0: nf.th, th1: nf.th + TWO_PI, label: 'on the new orbit' } : { orb: orbF, th0: nf.th, rclip: 2.2*Math.max(o.ra, r), label: `on the new ${type} orbit (escaping)` };
@@ -939,12 +950,13 @@ function updateApsides(o) {
   const list = [
     [label],
     [m`r` + ' (burn radius)', `${km(r)} (${m`\theta_b = ${atPeri ? 0 : 180}^\circ`})`], [m`V_i = \sqrt{2\mu/r - \mu/a_i}`, kms(Vi)], [m`a_f`, km(af, 2)], [m`V_f = \sqrt{2\mu/r - \mu/a_f}`, kms(Vf)],
-    [m`\Delta V = V_f - V_i` + ' (signed, tangential)', `${f(dV, 4)} km/s <span class="dim">(${m`\psi = ${dV >= 0 ? '0^\\circ' : '180^\\circ'}`} ${dV >= 0 ? 'prograde' : 'retrograde'})</span> ${fuelBtn(dV)}`],
+    [m`\Delta V = V_f - V_i` + ' (signed, tangential)', `${f(dV, 4)} km/s <span class="dim">(${m`\psi = ${dV >= 0 ? '0^\\circ' : '180^\\circ'}`} ${dV >= 0 ? 'prograde' : 'retrograde'})</span>`],
     [m`\lvert\Delta V\rvert`, kms(Math.abs(dV))],
   ];
   if (isCirc) list.push([atPeri ? m`\sqrt{\mu/a}\,\dfrac{\sqrt{1+e}-1}{\sqrt{1-e}}` : m`\sqrt{\mu/a}\,\dfrac{1-\sqrt{1-e}}{\sqrt{1+e}}`, kms(closed)]);
   list.push(['New orbit'], [m`e_f`, f(ef, 5)], [m`r_{p,f}\ /\ r_{a,f}`, `${km(rpf)} / ${km(raf)}`], [m`T_f`, af === Infinity ? '— (parabolic)' : fmtTime(period(o.mu, af))]);
   html += rows(list);
+  html += fuelRows(dV);
   out('apsOut', html);
   const burnIsPeri = af === Infinity || other >= r;
   const wf = burnIsPeri ? o.w + thb : o.w + thb + Math.PI;
@@ -986,7 +998,7 @@ function updateGeneral(o) {
         [m`\theta_i\ /\ \theta_f`, `${deg(wrap360(s.thi*R2D))} / ${deg(wrap360(s.thf*R2D))}`], [m`r`, km(s.r)],
         [m`V_i,\ \gamma_i`, `${f(s.Vi, 4)} km/s, ${f(s.gi*R2D, 3)}°`], [m`V_f,\ \gamma_f`, `${f(s.Vf, 4)} km/s, ${f(s.gf*R2D, 3)}°`],
         [m`\varphi = \gamma_f - \gamma_i`, deg(s.phi*R2D)],
-        [m`\Delta V,\ \psi`, `${f(s.dV, 4)} km/s, ${f(wrap180(s.psi*R2D), 3)}° ${fuelBtn(s.dV)}`, s === best]
+        [m`\Delta V,\ \psi`, `${f(s.dV, 4)} km/s, ${f(wrap180(s.psi*R2D), 3)}°`, s === best], mFrow(s.dV)
       ]);
     });
   }
@@ -1016,13 +1028,14 @@ function updateHohmann(o) {
     [m`r_i \to r_f,\quad \lambda = r_f/r_i`, `${f(ri, 1)} → ${f(rf, 1)} km, λ = ${f(lam, 4)}`], [m`V_i = \sqrt{\mu/r_i},\ V_f = \sqrt{\mu/r_f}`, `${f(Vi, 4)}, ${f(Vcf, 4)} km/s`],
     [m`a_H,\ e_H`, `${f(aH, 1)} km, ${f(Math.abs(rf - ri)/(rf + ri), 5)}`], [m`V_H(r_i)\ /\ V_H(r_f)`, `${f(vis(mu, ri, aH), 4)} / ${f(vis(mu, rf, aH), 4)} km/s`],
     [m`\Delta V_1` + ' (signed)', kms(dv1)], [m`\Delta V_2` + ' (signed)', kms(dv2)],
-    [m`\Delta V_T = \lvert\Delta V_1\rvert + \lvert\Delta V_2\rvert`, `${kms(dvT)} ${fuelBtn(dvT)}`],
+    [m`\Delta V_T = \lvert\Delta V_1\rvert + \lvert\Delta V_2\rvert`, kms(dvT)],
     [m`\Delta V_T / V_i`, `${f(norm, 5)} <span class="dim">(escape from ${m`r_i`}: ${m`\sqrt2 - 1 = 0.41421`})</span>`],
     [m`T_H = \pi\sqrt{a_H^3/\mu}`, fmtTime(TH)],
     ['Timeline'],
     [`Coast from ${m`\theta_0`} to ${m`\theta_b = ${f(thb*R2D, 1)}^\circ`}`, fmtTime(tCoast)], [`${m`\Delta V_1`} at`, fmtTime(tCoast)], [`${m`\Delta V_2`} at`, fmtTime(tCoast + TH)]
   ]);
   if (lam > 1) html += msg(norm < Math.SQRT2 - 1 ? `Cheaper than direct escape from ${m`r_i`}.` : `More expensive than direct escape from ${m`r_i`} (${m`\lambda`} far from 1; the maximum of the curve is at ${m`\lambda \approx 15.58`}).`, norm < Math.SQRT2 - 1 ? 'ok' : 'warn');
+  html += fuelRows(dvT);
   out('hohOut', html);
   const A1 = o.w + thb, leg = transferLeg(ri, A1, rf);
   const track = animTrack(mu, [
@@ -1058,7 +1071,7 @@ function updateBielliptic(o) {
     [m`r_i \to r_f,\quad \lambda = r_f/r_i`, `${f(ri, 1)} → ${f(rf, 1)} km, λ = ${f(lam, 4)}`],
     [m`r_t,\quad \beta = r_t/r_i`, `${f(rt, 1)} km, β = ${f(beta, 4)}`], [m`a_1,\ a_2`, `${f(a1, 1)}, ${f(a2, 1)} km`],
     [m`\Delta V_1` + ' (at ' + m`r_i` + ')', kms(b1)], [m`\Delta V_2` + ' (at ' + m`r_t` + ')', kms(b2)], [m`\Delta V_3` + ' (at ' + m`r_f` + ')', kms(b3)],
-    [m`\Delta V_T`, `${kms(bT)} ${fuelBtn(bT)}`], [m`\Delta V_T / V_i`, f(bT/Vi, 5)],
+    [m`\Delta V_T`, kms(bT)], [m`\Delta V_T / V_i`, f(bT/Vi, 5)],
     [m`T_B = (T_1 + T_2)/2`, fmtTime(TB)],
     [`Bi-parabolic limit (${m`\beta \to \infty`})`, `${kms(bp)} <span class="dim">(${f(bp/Vi, 5)} ${m`V_i`})</span>`],
     ['Comparison with Hohmann for the same ' + m`r_f`],
@@ -1073,6 +1086,7 @@ function updateBielliptic(o) {
     else if (lam <= 15.58) bh += msg(`${m`11.94 \le \lambda \le 15.58`}: a bi-elliptic transfer beats Hohmann only for sufficiently large ${m`\beta`}.`, 'warn');
     else bh += msg(`${m`\lambda > 15.58`}: the bi-elliptic transfer always beats Hohmann for ${m`\beta > \lambda`}.`, 'ok');
   }
+  bh += fuelRows(bT);
   out('bieOut', bh);
   const A1 = o.w + thb, leg1 = transferLeg(ri, A1, rt), leg2 = transferLeg(rt, A1 + Math.PI, rf);
   const track = animTrack(mu, [
@@ -1106,8 +1120,8 @@ function updateCoaxial(o) {
   const chosen = pick === 'auto' ? best : opts.find(s => s.key === pick);
   const largerApo = Math.max(o.ra, raf);
   html += rows([['Final orbit'], [m`a_f,\ e_f`, `${f(af, 1)} km, ${f(ef, 5)}`], [m`T_f`, fmtTime(period(mu, af))]]);
-  html += `<table class="cmp"><tr><th>Option</th><th>${m`a_t`}</th><th>${m`\Delta V_1`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th><th>time</th></tr>` +
-    opts.map(s => `<tr${s === best ? ' class="best"' : ''}><td>${s.name}</td><td>${f(s.at, 1)} km</td><td>${f(s.d1, 4)}</td><td>${f(s.d2, 4)}</td><td>${f(s.T, 4)} km/s ${fuelBtn(s.T)}</td><td>${f(s.time/3600, 3)} h</td></tr>`).join('') + '</table>';
+  html += `<table class="cmp"><tr><th>Option</th><th>${m`a_t`}</th><th>${m`\Delta V_1`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th><th>${m`m_F`}</th><th>time</th></tr>` +
+    opts.map(s => `<tr${s === best ? ' class="best"' : ''}><td>${s.name}</td><td>${f(s.at, 1)} km</td><td>${f(s.d1, 4)}</td><td>${f(s.d2, 4)}</td><td>${f(s.T, 4)} km/s</td><td>${mFcell(s.T)}</td><td>${f(s.time/3600, 3)} h</td></tr>`).join('') + '</table>';
   const ruleOk = best.r1 === largerApo || best.r2 === largerApo;
   html += msg(`Cheapest: option ${best.key}. Rule check: the transfer through the larger apogee (${km(largerApo)}) is ${ruleOk ? 'indeed the cheaper one' : 'not the cheaper one here (orbits overlap or are nearly equal — check for a single-impulse solution)'}.`, ruleOk ? 'ok' : 'warn');
   out('coxOut', html);
@@ -1155,7 +1169,8 @@ function updatePlane(o) {
   if (mode === 'inc') list.push([`Check: ${m`\Delta A = \lvert i_f - i_i\rvert`}, nodes at ${m`\phi = 0`}`, `${deg(Math.abs(dI)*R2D, 4)}`]);
   if (mode === 'raan') list.push([`Check: ${m`\sin(\Delta A/2) = \sin i\,\sin(\Delta\Omega/2)`}`, `ΔA = ${deg(2*Math.asin(clamp(Math.abs(Math.sin(o.i)*Math.sin(dOm/2)), 0, 1))*R2D, 4)}`]);
   list.push([m`\Delta V = 2V\sin(\Delta A/2)` + ' at each point']);
-  cands.forEach((c, k) => list.push([`Point ${k + 1}: ${m`r,\ V,\ \Delta V`}`, `${f(c.r, 1)} km, ${f(c.V, 4)} km/s, <b>${f(c.dV, 4)} km/s</b> ${fuelBtn(c.dV)}`, c === best]));
+  cands.forEach((c, k) => list.push([`Point ${k + 1}: ${m`r,\ V,\ \Delta V`}`, `${f(c.r, 1)} km, ${f(c.V, 4)} km/s, <b>${f(c.dV, 4)} km/s</b>`, c === best]));
+  list.push(mFrow(best.dV, m`m_F` + ' (propellant at the cheaper point)'));
   list.push([m`\Delta V` + ' direction', `${m`\psi = 90^\circ + \Delta A/2 = ${f(90 + dA*R2D/2, 3)}^\circ`} in the plane of ${m`(\vec V_i, \vec V_f)`}`]);
   list.push([`Coast from ${m`\theta_0`} to the animated burn point (point ${cands.indexOf(chosen) + 1})`, fmtTime(tofPeri(o.orb, o.mu, unwrapAfter(chosen.th, o.th)) - tofPeri(o.orb, o.mu, o.th))]);
   html += rows(list);
@@ -1183,10 +1198,10 @@ function updateThree(o) {
   if (!(lam >= 1)) html += msg(`${m`\lambda`} must be ≥ 1 (${m`r_2 \ge r_1`}).`, 'bad');
   const c = costAt(lam);
   html += rows([
-    ['Single impulse (reference)'], [m`V_1,\quad \Delta V = 2V_1\sin(\Delta i/2)`, `${f(V1, 4)} km/s, ${f(single, 4)} km/s ${fuelBtn(single)}`],
+    ['Single impulse (reference)'], [m`V_1,\quad \Delta V = 2V_1\sin(\Delta i/2)`, `${f(V1, 4)} km/s, ${f(single, 4)} km/s`], mFrow(single, m`m_F` + ' (single impulse)'),
     [`Three impulses with ${m`\lambda = ${f(lam, 4)}`}`],
     [m`r_2 = \lambda r_1,\ a_t`, `${f(c.r2, 1)} km, ${f(c.at, 1)} km`], [m`\Delta V_1 = \Delta V_3` + ' (tangential)', kms(c.d1)], [m`\Delta V_2` + ' (plane change at ' + m`r_2` + ')', kms(c.d2)],
-    [m`\Delta V_T = 2\Delta V_1 + \Delta V_2`, `${kms(c.T)} ${fuelBtn(c.T)}`, c.T < single], [m`\Delta V_T / V_1` + ' (formula)', f(2*(Math.sqrt(2*lam/(1 + lam))*(1 + s/lam) - 1), 5)],
+    [m`\Delta V_T = 2\Delta V_1 + \Delta V_2`, kms(c.T), c.T < single], mFrow(c.T, m`m_F` + ' (three impulses)'), [m`\Delta V_T / V_1` + ' (formula)', f(2*(Math.sqrt(2*lam/(1 + lam))*(1 + s/lam) - 1), 5)],
     ['Saving vs single impulse', `${f((single - c.T)*1000, 2)} m/s (${f((1 - c.T/single)*100, 2)} %)`],
     ['Total time (two half ellipses)', fmtTime(2*Math.PI*Math.sqrt(c.at**3/mu))],
     ['Optimum'], [m`\lambda_{\mathrm{opt}} = \dfrac{\sin(\Delta i/2)}{1 - 2\sin(\Delta i/2)}`, f(lamOpt, 4)], [m`\lambda \to \infty:\ \Delta V_T \to 2V_1(\sqrt2 - 1)`, kms(2*V1*(Math.SQRT2 - 1))]
@@ -1239,8 +1254,8 @@ function updateHohPlane(o) {
   ].map(s => ({ ...s, ...cost(s.al) }));
   const best = strategies.reduce((mn, s) => s.T < mn.T ? s : mn, strategies[0]);
   html += rows([['Geometry'], [m`r_i \to r_f,\ \Delta i`, `${f(ri, 1)} → ${f(rf, 1)} km, ${deg(di*R2D)}`], [m`V_{c1},\ V_{t1}` + ' (at ' + m`r_i` + ')', `${f(Vc1, 4)}, ${f(Vt1, 4)} km/s`], [m`V_{t2},\ V_{c2}` + ' (at ' + m`r_f` + ')', `${f(Vt2, 4)}, ${f(Vc2, 4)} km/s`],
-    ['Pure Hohmann (no plane change)', kms(hoh)], ['Separate maneuvers: Hohmann + plane change on the farther circular orbit', `${kms(sep)} ${fuelBtn(sep)}`]]);
-  html += `<table class="cmp"><tr><th>Strategy</th><th>${m`\Delta i`} at 1st</th><th>${m`\Delta i`} at 2nd</th><th>${m`\Delta V_1`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th></tr>` + strategies.map(s => `<tr${s === best ? ' class="best"' : ''}><td>${s.name}</td><td>${f(s.al*di*R2D, 3)}°</td><td>${f((1 - s.al)*di*R2D, 3)}°</td><td>${f(s.d1, 4)}</td><td>${f(s.d2, 4)}</td><td>${f(s.T, 4)} km/s ${fuelBtn(s.T)}</td></tr>`).join('') + '</table>';
+    ['Pure Hohmann (no plane change)', kms(hoh)], ['Separate maneuvers: Hohmann + plane change on the farther circular orbit', kms(sep)], mFrow(sep, m`m_F` + ' (separate maneuvers)')]);
+  html += `<table class="cmp"><tr><th>Strategy</th><th>${m`\Delta i`} at 1st</th><th>${m`\Delta i`} at 2nd</th><th>${m`\Delta V_1`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th><th>${m`m_F`}</th></tr>` + strategies.map(s => `<tr${s === best ? ' class="best"' : ''}><td>${s.name}</td><td>${f(s.al*di*R2D, 3)}°</td><td>${f((1 - s.al)*di*R2D, 3)}°</td><td>${f(s.d1, 4)}</td><td>${f(s.d2, 4)}</td><td>${f(s.T, 4)} km/s</td><td>${mFcell(s.T)}</td></tr>`).join('') + '</table>';
   html += msg(`Applying the whole plane change at the farther impulse costs ${f((strategies[0].T - strategies[2].T)*1000, 2)} m/s more than the exact optimum, and saves ${f((sep - strategies[0].T)*1000, 2)} m/s versus doing the two maneuvers separately.`, 'ok');
   out('hpOut', html);
   const eH = Math.abs(rf - ri)/(rf + ri), pH = aH*(1 - eH*eH), iF = o.i + di, up = rf >= ri;
@@ -1272,7 +1287,7 @@ function updateRotation(o) {
     s.r = rAt(o.p, o.e, s.thi); s.V = vis(o.mu, s.r, o.a); s.gi = gamAt(o.e, s.thi); s.gf = gamAt(o.e, s.thf); s.phi = s.gf - s.gi;
     const t = triBwd(s.V, s.V, s.phi); s.dV = t.dV; s.psi = t.psi; return s;
   });
-  html += rows([['Closed form'], [m`\Delta V = 2e\sqrt{\mu/p}\,\lvert\sin(\Delta\omega/2)\rvert`, `${kms(closed)} ${fuelBtn(closed)}`], [m`\omega_i \to \omega_f`, `${deg(o.w*R2D)} → ${deg(wrap360((o.w + dw)*R2D))}`]]);
+  html += rows([['Closed form'], [m`\Delta V = 2e\sqrt{\mu/p}\,\lvert\sin(\Delta\omega/2)\rvert`, kms(closed)], mFrow(closed), [m`\omega_i \to \omega_f`, `${deg(o.w*R2D)} → ${deg(wrap360((o.w + dw)*R2D))}`]]);
   sols.forEach((s, k) => html += rows([
     [`Solution ${k + 1}`],
     [m`\theta_i\ /\ \theta_f`, `${deg(wrap360(s.thi*R2D))} / ${deg(wrap360(s.thf*R2D))}`], [m`r,\quad V = V_i = V_f`, `${f(s.r, 1)} km, ${f(s.V, 4)} km/s`],
@@ -1306,7 +1321,7 @@ function updatePhasingCirc(o) {
     [cs === 'trail' ? `Trailing: target ahead by ${m`\nu`} → faster (lower) phasing orbit` : `Leading: target behind by ${m`\nu`} → slower (higher) phasing orbit`],
     [m`T` + ' (common orbit)', fmtTime(T)], [m`T_{ph} = T\bigl(1 ${sign < 0 ? '-' : '+'} \tfrac{\nu}{2\pi k}\bigr)`, fmtTime(Tph)], [m`a_{ph}`, km(aph, 2)],
     [`Phasing orbit ${sign < 0 ? m`r_a = r,\ r_p` : m`r_p = r,\ r_a`}`, `${km(r)}, ${km(other)}`], [m`e_{ph}`, f(Math.abs(other - r)/(other + r), 5)],
-    [m`\Delta V_1` + ' (tangential, signed)', kms(dv1)], [m`\Delta V_T = 2\lvert\Delta V_1\rvert`, `${kms(2*Math.abs(dv1))} ${fuelBtn(2*Math.abs(dv1))}`],
+    [m`\Delta V_1` + ' (tangential, signed)', kms(dv1)], [m`\Delta V_T = 2\lvert\Delta V_1\rvert`, kms(2*Math.abs(dv1))], mFrow(2*Math.abs(dv1)),
     ['Timeline'],
     [`Coast from ${m`\theta_0`} to ${m`\theta_b`}`, fmtTime(tCoast)], [`Phasing time ${m`k\,T_{ph}`}`, fmtTime(k*Tph)], ['Rendezvous at', fmtTime(tCoast + k*Tph)]
   ]);
@@ -1352,7 +1367,7 @@ function updatePhasingEll(o) {
     ['Phasing orbit'],
     [m`T_{ph} = T - t_{AB}/k`, fmtTime(Tph)], [m`a_{ph}`, km(aph, 2)], [m`e_{ph},\ \omega_{ph}`, `${f(ph.e, 5)}, ${deg(wrap360(wph*R2D))}`], [m`r_{p,ph}\ /\ r_{a,ph}`, `${km(rpph)} / ${km(ph.e < 1 ? ph.p/(1 - ph.e) : Infinity)}`],
     [`Burn point ${m`r`} (${at === 'peri' ? 'perigee' : m`\theta_A`})`, km(r)], [m`V = \sqrt{2\mu/r - \mu/a}` + ' (original orbit)', kms(Vi)], [m`V_{ph} = \sqrt{2\mu/r - \mu/a_{ph}}`, kms(Vph)],
-    [m`\Delta V_1` + ' (tangential, signed)', kms(dv1)], [m`\Delta V_T = 2\lvert\Delta V_1\rvert`, `${kms(2*Math.abs(dv1))} ${fuelBtn(2*Math.abs(dv1))}`],
+    [m`\Delta V_1` + ' (tangential, signed)', kms(dv1)], [m`\Delta V_T = 2\lvert\Delta V_1\rvert`, kms(2*Math.abs(dv1))], mFrow(2*Math.abs(dv1)),
     ['Timeline'],
     ['Coast to the burn point', fmtTime(tCoast)], [`Phasing time ${m`k\,T_{ph}`}`, fmtTime(k*Tph)], ['Rendezvous at', fmtTime(tCoast + k*Tph)]
   ]);
@@ -1380,14 +1395,6 @@ function updatePhasingEll(o) {
   ], o.R, { anim });
 }
 
-/* ---------- FUEL ---------- */
-function updateFuel() {
-  const isp = val('f_isp'), m0 = val('f_m0'), dv = val('f_dv'), g0 = val('f_g0');
-  if (![isp, m0, dv, g0].every(Number.isFinite) || isp <= 0 || m0 <= 0 || g0 <= 0) { out('fuelOut', msg(`Enter positive ${m`I_{sp}`}, ${m`m_0`}, ${m`g_0`} and a ${m`\Delta V`}.`, 'bad')); return; }
-  const Ve = isp*g0/1000; const ratio = Math.exp(-Math.abs(dv)/Ve); const mF = m0*(1 - ratio);
-  out('fuelOut', rows([[m`V_e = I_{sp}\,g_0`, kms(Ve)], [m`m_f/m_0 = e^{-\Delta V/V_e}`, f(ratio, 5)], [m`m_F = m_0(1 - e^{-\Delta V/V_e})`, `${f(mF, 2)} kg (${f(100*mF/m0, 2)} % of ${m`m_0`})`], [m`m_0 - m_F`, `${f(m0 - mF, 2)} kg`]]));
-}
-
 /* ---------- master update ---------- */
 function update() {
   const o = readOrbit();
@@ -1397,7 +1404,6 @@ function update() {
   const steps = o.valid ? [updateTriangle, updateApsides, updateGeneral, updateHohmann, updateBielliptic, updateCoaxial, updatePlane, updateThree, updateHohPlane, updateRotation, updatePhasingCirc, updatePhasingEll] : [];
   steps.forEach(fn => { try { fn(o); } catch (err) { console.error(fn.name, err); } });
   if (!o.valid) ['triOut','apsOut','genOut','hohOut','bieOut','coxOut','pcOut','t3Out','hpOut','rotOut','phcOut','pheOut'].forEach(id => out(id, msg('Define a valid orbit first.', 'warn')));
-  updateFuel();
 }
 
 /* ---------- wiring ---------- */
@@ -1420,11 +1426,6 @@ function init() {
     try { localStorage.setItem('om-tab', btn.dataset.tab); } catch (e) {}
   }));
   try { const t = localStorage.getItem('om-tab'); if (t) { const b = document.querySelector(`.tabs button[data-tab="${t}"]`); if (b) b.click(); } } catch (e) {}
-  document.body.addEventListener('click', ev => {
-    const b = ev.target.closest('.usefuel'); if (!b) return;
-    $('f_dv').value = +parseFloat(b.dataset.dv).toFixed(5); updateFuel();
-    $('f_dv').animate([{ outline: '3px solid var(--accent)' }, { outline: '0 solid transparent' }], { duration: 900 });
-  });
   const applyTheme = t => { if (t) document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme'); };
   try { applyTheme(localStorage.getItem('om-theme')); } catch (e) {}
   $('themeBtn').addEventListener('click', () => {
