@@ -124,7 +124,7 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
 <header>
   <div>
     <h1>Orbital Maneuvers Calculator</h1>
-    <p>Impulsive maneuvers from Lesson 4 of Orbital Dynamics. Define the central body, the initial orbit and the spacecraft (\(I_{sp}\), \(m_0\)) once (including the initial true anomaly \(\theta_0\)), then explore each maneuver family. Every orbit plot can be switched to an interactive 3D view (drag to rotate, wheel to zoom) and played as a time animation from \(\theta_0\) through each impulse. Velocities in km/s, distances in km, angles in degrees.</p>
+    <p>Impulsive maneuvers from Lesson 4 of Orbital Dynamics. Define the central body, the initial orbit and the spacecraft (\(I_{sp}\), \(m_0\)) once (including the initial true anomaly \(\theta_0\)), then explore each maneuver family. Every orbit plot is an interactive 3D view (drag to rotate, wheel to zoom; “2D plane” shows the orbital plane) and played as a time animation from \(\theta_0\) through each impulse. Velocities in km/s, distances in km, angles in degrees.</p>
   </div>
   <button class="iconbtn" id="themeBtn" title="Toggle light/dark">◐ Theme</button>
 </header>
@@ -646,7 +646,7 @@ function plot(svgId, legId, orbits, points, R, opts = {}) {
   setAnim(svgId, opts.anim || null);
   render(svgId);
 }
-function plotMode(id) { const d = PLOTS[id]; return PMODE[id] || (d && d.opts.default3d ? '3d' : '2d'); }
+function plotMode(id) { return PMODE[id] || '3d'; } // 3D by default; '2d' is the orbital-plane view
 function render(id) {
   const d = PLOTS[id], svg = $(id); if (!d || !svg) return;
   const box = svg.parentElement, cv = box.querySelector('canvas.c3d'), tools = box.querySelector('.ptools');
@@ -775,16 +775,16 @@ function setupPlotboxes() {
   document.querySelectorAll('svg[id$="Plot"]').forEach(svg => {
     const id = svg.id, box = svg.parentElement;
     const tools = document.createElement('div'); tools.className = 'ptools';
-    tools.innerHTML = `<button data-v="2d" title="Orbital-plane view">2D</button><button data-v="3d" title="Interactive 3D view">3D</button><span class="p3d"><button data-act="top" title="View from the north pole">Top</button><button data-act="edge" title="Edge-on equatorial view">Edge</button><button data-act="reset" title="Default view">Reset</button></span><span class="hint p3d">drag to rotate · wheel to zoom</span>`;
+    tools.innerHTML = `<button data-v="3d" title="Interactive 3D view">3D</button><button data-v="2d" title="Orbital-plane view">2D plane</button><span class="p3d"><button data-act="top" title="View from the north pole">Top</button><button data-act="edge" title="Edge-on equatorial view">Edge</button><button data-act="reset" title="Default view">Reset</button></span><span class="hint p3d">drag to rotate · wheel to zoom</span>`;
     const cv = document.createElement('canvas'); cv.className = 'c3d'; cv.style.display = 'none';
     const bar = document.createElement('div'); bar.className = 'anim';
     bar.innerHTML = `<button class="play" data-a="play">▶ Play</button><button data-a="reset" title="Back to the start">⟲</button><input type="range" min="0" max="1000" value="0" data-a="scrub" title="Scrub through the maneuver"><select data-a="speed" title="Playback speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select><div class="readout"></div>`;
     box.prepend(tools); box.appendChild(cv); box.appendChild(bar);
     PVIEW[id] = DEFVIEW();
-    try { PMODE[id] = localStorage.getItem('om-view-' + id) || null; } catch (e) { PMODE[id] = null; }
+    try { PMODE[id] = localStorage.getItem('om-view2-' + id) || null; } catch (e) { PMODE[id] = null; }
     tools.addEventListener('click', ev => {
       const b = ev.target.closest('button'); if (!b) return;
-      if (b.dataset.v) { PMODE[id] = b.dataset.v; try { localStorage.setItem('om-view-' + id, b.dataset.v); } catch (e) {} render(id); return; }
+      if (b.dataset.v) { PMODE[id] = b.dataset.v; try { localStorage.setItem('om-view2-' + id, b.dataset.v); } catch (e) {} render(id); return; }
       const vw = PVIEW[id];
       if (b.dataset.act === 'top') { vw.az = 0; vw.tilt = 0; } else if (b.dataset.act === 'edge') { vw.az = 0; vw.tilt = Math.PI/2; } else Object.assign(vw, DEFVIEW());
       render3d(id);
@@ -1154,7 +1154,7 @@ function updatePlane(o) {
   const dOm = OmF - o.Om, dI = iF - o.i;
   html += rows([['Planes'], [m`i_i \to i_f`, `${deg(o.i*R2D)} → ${deg(iF*R2D)}`], [m`\Omega_i \to \Omega_f`, `${deg(o.Om*R2D)} → ${deg(OmF*R2D)}`], [m`\Delta A` + ' (angle between planes)', deg(dA*R2D, 4)]]);
   const orbI = { p: o.p, e: o.e, w: o.w, i: o.i, Om: o.Om, color: CI, label: 'initial orbit' }, orbF = { p: o.p, e: o.e, w: o.w, i: iF, Om: OmF, color: CF, label: 'final orbit (same a, e, ω)' };
-  if (dA < 1e-9) { html += msg(`Same orbital plane: no maneuver needed (${m`\Delta V = 0`}).`, 'ok'); out('pcOut', html); plotTriangle('pcVec', o.V, o.V, 0); plot('pcPlot', 'pcLeg', [orbI, orbF], [], o.R, { default3d: true }); return; }
+  if (dA < 1e-9) { html += msg(`Same orbital plane: no maneuver needed (${m`\Delta V = 0`}).`, 'ok'); out('pcOut', html); plotTriangle('pcVec', o.V, o.V, 0); plot('pcPlot', 'pcLeg', [orbI, orbF], [], o.R); return; }
   const l = L.map(x => x/sinA);
   const Ni = [Math.cos(o.Om), Math.sin(o.Om), 0], Mi = cross(ni, Ni);
   const u1 = Math.atan2(dot(l, Mi), dot(l, Ni));
@@ -1183,7 +1183,7 @@ function updatePlane(o) {
     { orb: o.orb, th0: o.th, th1: thA, label: 'coasting on the initial orbit', burnAfter: 'ΔV (plane change)' },
     { orb: { p: o.p, e: o.e, w: o.w, i: iF, Om: OmF }, th0: thA, th1: thA + TWO_PI, label: 'on the final orbit (new plane)' }
   ], CS, 'spacecraft');
-  plot('pcPlot', 'pcLeg', [orbI, orbF], cands.map((c, k) => ({ x: c.r*Math.cos(c.u), y: c.r*Math.sin(c.u), color: c === chosen ? C1 : CP, label: `point ${k + 1}${c === best ? ' (cheapest)' : ''}` })), o.R, { default3d: true, anim: { tracks: [track] } });
+  plot('pcPlot', 'pcLeg', [orbI, orbF], cands.map((c, k) => ({ x: c.r*Math.cos(c.u), y: c.r*Math.sin(c.u), color: c === chosen ? C1 : CP, label: `point ${k + 1}${c === best ? ' (cheapest)' : ''}` })), o.R, { anim: { tracks: [track] } });
 }
 
 function updateThree(o) {
@@ -1230,7 +1230,7 @@ function updateThree(o) {
       { p: r1, e: 0, w: 0, i: iF, Om: o.Om, color: CF, label: 'final orbit (i + Δi)' }
     ], [
       { x: -r1, y: 0, i: o.i, Om: o.Om, color: CP, label: 'ΔV₁' }, { x: c.r2, y: 0, i: o.i, Om: o.Om, color: CP, label: 'ΔV₂ (node)' }, { x: -r1, y: 0, i: iF, Om: o.Om, color: CP, label: 'ΔV₃' }
-    ], o.R, { default3d: true, anim: { tracks: [track] } });
+    ], o.R, { anim: { tracks: [track] } });
   }
   $('t3_opt').onclick = () => { if (Number.isFinite(lamOpt) && lamOpt > 1) { $('t3_lam').value = +lamOpt.toFixed(4); update(); } };
 }
@@ -1274,7 +1274,7 @@ function updateHohPlane(o) {
   ], [
     { x: -ri, y: 0, i: o.i, Om: o.Om, color: CP, label: up ? 'ΔV₁' : 'ΔV₁ + plane change (node)' },
     { x: rf, y: 0, i: iF, Om: o.Om, color: CP, label: up ? 'ΔV₂ + plane change (node)' : 'ΔV₂' }
-  ], o.R, { default3d: true, anim: { tracks: [track] } });
+  ], o.R, { anim: { tracks: [track] } });
 }
 
 /* ---------- APSIDES ROTATION ---------- */
