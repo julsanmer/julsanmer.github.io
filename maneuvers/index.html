@@ -169,7 +169,7 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
   <div class="panel active" id="panel-single">
     <div class="card">
       <h3>Velocity triangle at a chosen burn point \(\theta_b\)</h3>
-      <p class="lead">Phasor solution: \(V_f\angle\varphi = \Delta V\angle\psi + V_i\angle 0^\circ\). Both \(\psi\) and \(\varphi\) are measured counterclockwise from \(\vec V_i\) (\(\psi = 0^\circ\) is a prograde tangential burn, \(\psi = 180^\circ\) retrograde). Equivalent trigonometric form: \(\Delta V^2 = V_i^2 + V_f^2 - 2V_iV_f\cos\varphi\), \(\sin\psi = V_f\sin\varphi/\Delta V\). The new orbit follows from \((r, V_f, \gamma_f)\) with \(\gamma_f = \gamma_i - \varphi\). The spacecraft coasts from \(\theta_0\) to \(\theta_b\) before the impulse.</p>
+      <p class="lead">Phasor solution: \(V_f\angle\varphi = \Delta V\angle\psi + V_i\angle 0^\circ\). Both \(\psi\) and \(\varphi\) are measured from \(\vec V_i\) in the same sense, positive when the flight-path angle increases (\(\Delta\vec V\) tilted towards the outward radial direction); \(\psi = 0^\circ\) is a prograde tangential burn, \(\psi = 180^\circ\) retrograde. Equivalent trigonometric form: \(\Delta V^2 = V_i^2 + V_f^2 - 2V_iV_f\cos\varphi\), \(\sin\psi = V_f\sin\varphi/\Delta V\). The new orbit follows from \((r, V_f, \gamma_f)\) with \(\gamma_f = \gamma_i + \varphi\). The spacecraft coasts from \(\theta_0\) to \(\theta_b\) before the impulse.</p>
       <div class="radios">
         <label><input type="radio" name="trimode" value="fwd" checked> Given \(\Delta V,\ \psi\) → find \(V_f,\ \varphi\) and the new orbit</label>
         <label><input type="radio" name="trimode" value="bwd"> Given \(V_f,\ \varphi\) → find \(\Delta V,\ \psi\)</label>
@@ -214,7 +214,7 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
       <h3>General change of coplanar orbit \((a, e, \omega)\)</h3>
       <p class="lead">The burn must happen at a point common to both orbits:
       \[\frac{a_i(1-e_i^2)}{1+e_i\cos\theta_i} = \frac{a_f(1-e_f^2)}{1+e_f\cos\theta_f},\qquad \theta_i+\omega_i = \theta_f+\omega_f .\]
-      Writing \(\theta_f = \theta_i - \Delta\omega\) this becomes \(A\sin\theta_i + B\cos\theta_i = C\), solvable only if \(A^2+B^2 \ge C^2\). With \(D=\sqrt{A^2+B^2}\), \(\sin\theta_0 = A/D\), \(\cos\theta_0 = B/D\): \(\theta_i = \theta_0 \pm \arccos(C/D)\), two solutions in general. Then \(\varphi = \gamma_i - \gamma_f\) with \(\tan\gamma = \dfrac{e\sin\theta}{1+e\cos\theta}\).</p>
+      Writing \(\theta_f = \theta_i - \Delta\omega\) this becomes \(A\sin\theta_i + B\cos\theta_i = C\), solvable only if \(A^2+B^2 \ge C^2\). With \(D=\sqrt{A^2+B^2}\), \(\sin\theta_0 = A/D\), \(\cos\theta_0 = B/D\): \(\theta_i = \theta_0 \pm \arccos(C/D)\), two solutions in general. Then \(\varphi = \gamma_f - \gamma_i\) with \(\tan\gamma = \dfrac{e\sin\theta}{1+e\cos\theta}\).</p>
       <div class="grid">
         <label><span class="lbl">\(a_f\) (km)</span><input id="gen_a" type="number" step="any" value="9000"></label>
         <label><span class="lbl">\(e_f\)</span><input id="gen_e" type="number" step="any" value="0.3"></label>
@@ -339,8 +339,8 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
   <div class="panel" id="panel-apsides">
     <div class="card">
       <h3>Rotation of the line of apsides</h3>
-      <p class="lead">Rotate \(\omega\) by \(\Delta\omega\) keeping \(a\) and \(e\), so \(V_f = V_i = \sqrt{2\mu/r-\mu/a}\). The burn is at \(\theta_i = \Delta\omega/2\) (then \(\theta_f = -\Delta\omega/2\)) or at \(\theta_i = \pi + \Delta\omega/2\) (\(\theta_f = \pi - \Delta\omega/2\)). Since \(\gamma_f = -\gamma_i\), \(\varphi = 2\gamma_i\) with \(\tan\gamma_i = \dfrac{e\sin(\Delta\omega/2)}{1+e\cos(\Delta\omega/2)}\), and
-      \[\Delta V = 2V_i\sin\gamma_i = 2e\sqrt{\frac{\mu}{p}}\,\Bigl\lvert\sin\frac{\Delta\omega}{2}\Bigr\rvert ,\]
+      <p class="lead">Rotate \(\omega\) by \(\Delta\omega\) keeping \(a\) and \(e\), so \(V_f = V_i = \sqrt{2\mu/r-\mu/a}\). The burn is at \(\theta_i = \Delta\omega/2\) (then \(\theta_f = -\Delta\omega/2\)) or at \(\theta_i = \pi + \Delta\omega/2\) (\(\theta_f = \pi - \Delta\omega/2\)). Since \(\gamma_f = -\gamma_i\), \(\varphi = -2\gamma_i\) with \(\tan\gamma_i = \dfrac{e\sin(\Delta\omega/2)}{1+e\cos(\Delta\omega/2)}\), and
+      \[\Delta V = 2V_i\lvert\sin\gamma_i\rvert = 2e\sqrt{\frac{\mu}{p}}\,\Bigl\lvert\sin\frac{\Delta\omega}{2}\Bigr\rvert ,\]
       identical for both solutions.</p>
       <div class="grid">
         <label><span class="lbl">\(\Delta\omega\) (°)</span><input id="rot_dw" type="number" step="any" value="60"></label>
@@ -873,7 +873,7 @@ function updateTriangle(o) {
   let dV, psi, Vf, phi;
   if (mode === 'fwd') { dV = val('tri_dv'); psi = val('tri_psi')*D2R; ({ Vf, phi } = triFwd(Vb, dV, psi)); }
   else { Vf = val('tri_vf'); phi = val('tri_phi')*D2R; ({ dV, psi } = triBwd(Vb, Vf, phi)); }
-  const gamf = gb - phi;
+  const gamf = gb + phi;
   const nf = orbitFromState(o.mu, r, Vf, gamf);
   const wf = o.w + thb - nf.th;
   const type = typeOf(nf.e);
@@ -892,7 +892,7 @@ function updateTriangle(o) {
     [m`\Delta V,\ \psi`, `${f(dV, 4)} km/s, ${f(wrap180(psi*R2D), 3)}° ${fuelBtn(dV)}`],
     [m`V_f,\ \varphi`, `${f(Vf, 4)} km/s, ${f(wrap180(phi*R2D), 3)}°`],
     [`Check: ${m`\sqrt{V_i^2 + V_f^2 - 2V_iV_f\cos\varphi}`}`, `${f(Math.sqrt(Math.max(0, Vb*Vb + Vf*Vf - 2*Vb*Vf*Math.cos(phi))), 4)} km/s`],
-    [m`\gamma_f = \gamma_i - \varphi`, deg(gamf*R2D)],
+    [m`\gamma_f = \gamma_i + \varphi`, deg(gamf*R2D)],
     [m`\Delta\varepsilon = \varepsilon_f - \varepsilon_i`, `${f(deps, 5)} km²/s² <span class="dim">(tangential: ${m`\Delta V(2V_i+\Delta V)/2`} = ${f(dV*(2*Vb + dV)/2, 5)})</span>`],
     ['New orbit'],
     ['Type', type], [m`a_f`, km(nf.a, 2)], [m`e_f`, f(nf.e, 5)], [m`p_f`, km(nf.p, 2)],
@@ -975,7 +975,7 @@ function updateGeneral(o) {
     const cands = Math.abs(ac) < 1e-9 ? [th0] : [th0 + ac, th0 - ac];
     cands.forEach(thi => {
       const thf = thi - dw; const r = rAt(pi, o.e, thi); const Vi = vis(o.mu, r, o.a), Vf = vis(o.mu, r, af);
-      const gi = gamAt(o.e, thi), gf = gamAt(ef, thf); const phi = gi - gf; const { dV, psi } = triBwd(Vi, Vf, phi);
+      const gi = gamAt(o.e, thi), gf = gamAt(ef, thf); const phi = gf - gi; const { dV, psi } = triBwd(Vi, Vf, phi);
       sols.push({ thi, thf, r, Vi, Vf, gi, gf, phi, dV, psi });
     });
     best = sols.reduce((mn, s) => s.dV < mn.dV ? s : mn, sols[0]);
@@ -985,7 +985,7 @@ function updateGeneral(o) {
         [`Solution ${k + 1}${s === best ? ' — cheapest' : ''}`],
         [m`\theta_i\ /\ \theta_f`, `${deg(wrap360(s.thi*R2D))} / ${deg(wrap360(s.thf*R2D))}`], [m`r`, km(s.r)],
         [m`V_i,\ \gamma_i`, `${f(s.Vi, 4)} km/s, ${f(s.gi*R2D, 3)}°`], [m`V_f,\ \gamma_f`, `${f(s.Vf, 4)} km/s, ${f(s.gf*R2D, 3)}°`],
-        [m`\varphi = \gamma_i - \gamma_f`, deg(s.phi*R2D)],
+        [m`\varphi = \gamma_f - \gamma_i`, deg(s.phi*R2D)],
         [m`\Delta V,\ \psi`, `${f(s.dV, 4)} km/s, ${f(wrap180(s.psi*R2D), 3)}° ${fuelBtn(s.dV)}`, s === best]
       ]);
     });
@@ -1269,15 +1269,15 @@ function updateRotation(o) {
   if (o.circ) html += msg(`The defined orbit is circular: it has no line of apsides, so ${m`\Delta\omega`} has no effect (${m`\Delta V = 0`}). Set ${m`e > 0`} in the orbit card.`, 'warn');
   const closed = 2*o.e*Math.sqrt(o.mu/o.p)*Math.abs(Math.sin(dw/2));
   const sols = [{ thi: dw/2, thf: -dw/2 }, { thi: Math.PI + dw/2, thf: Math.PI - dw/2 }].map(s => {
-    s.r = rAt(o.p, o.e, s.thi); s.V = vis(o.mu, s.r, o.a); s.gi = gamAt(o.e, s.thi); s.gf = gamAt(o.e, s.thf); s.phi = s.gi - s.gf;
+    s.r = rAt(o.p, o.e, s.thi); s.V = vis(o.mu, s.r, o.a); s.gi = gamAt(o.e, s.thi); s.gf = gamAt(o.e, s.thf); s.phi = s.gf - s.gi;
     const t = triBwd(s.V, s.V, s.phi); s.dV = t.dV; s.psi = t.psi; return s;
   });
   html += rows([['Closed form'], [m`\Delta V = 2e\sqrt{\mu/p}\,\lvert\sin(\Delta\omega/2)\rvert`, `${kms(closed)} ${fuelBtn(closed)}`], [m`\omega_i \to \omega_f`, `${deg(o.w*R2D)} → ${deg(wrap360((o.w + dw)*R2D))}`]]);
   sols.forEach((s, k) => html += rows([
     [`Solution ${k + 1}`],
     [m`\theta_i\ /\ \theta_f`, `${deg(wrap360(s.thi*R2D))} / ${deg(wrap360(s.thf*R2D))}`], [m`r,\quad V = V_i = V_f`, `${f(s.r, 1)} km, ${f(s.V, 4)} km/s`],
-    [m`\gamma_i,\quad \gamma_f = -\gamma_i`, `${f(s.gi*R2D, 4)}°, ${f(s.gf*R2D, 4)}°`], [m`\varphi = 2\gamma_i`, deg(s.phi*R2D, 4)],
-    [m`\Delta V = 2V\sin\gamma_i,\quad \psi`, `${f(s.dV, 4)} km/s, ${f(wrap180(s.psi*R2D), 3)}°`],
+    [m`\gamma_i,\quad \gamma_f = -\gamma_i`, `${f(s.gi*R2D, 4)}°, ${f(s.gf*R2D, 4)}°`], [m`\varphi = -2\gamma_i`, deg(s.phi*R2D, 4)],
+    [m`\Delta V = 2V\lvert\sin\gamma_i\rvert,\quad \psi`, `${f(s.dV, 4)} km/s, ${f(wrap180(s.psi*R2D), 3)}°`],
     [`Coast from ${m`\theta_0`} to ${m`\theta_i`}`, fmtTime(tofPeri(o.orb, o.mu, unwrapAfter(s.thi, o.th)) - tofPeri(o.orb, o.mu, o.th))]
   ]));
   out('rotOut', html);
