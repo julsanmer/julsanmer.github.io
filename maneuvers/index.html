@@ -74,6 +74,7 @@ table.res td,table.res th{padding:5px 6px;border-bottom:1px solid var(--border);
 table.res td:first-child{width:46%}
 table.res td:last-child{text-align:right;font-family:var(--mono);font-size:.86rem;white-space:normal}
 table.res th.sub{background:var(--surface-2);font-weight:600;font-size:.86rem;color:var(--muted)}
+.two.res2{gap:0 16px;margin-top:0}.two.res2 table.res{margin-top:0}
 table.res tr.best td{background:var(--ok-bg);color:var(--ok-fg);font-weight:600}
 table.cmp{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:8px}
 table.cmp th,table.cmp td{padding:5px 6px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono);font-size:.84rem;white-space:nowrap}
@@ -148,7 +149,7 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
     <label><span class="lbl">\(i\), inclination (°)</span><input id="inc" type="number" step="any"></label>
     <label><span class="lbl">\(\Omega\), RAAN (°)</span><input id="raan" type="number" step="any"></label>
     <label><span class="lbl">\(\omega\), arg. of perigee (°)</span><input id="argp" type="number" step="any"></label>
-    <label><span class="lbl">\(\theta_0\), true anomaly now (°)</span><input id="ta" type="number" step="any"></label>
+    <label><span class="lbl">\(\theta_0\), initial true anomaly (°)</span><input id="ta" type="number" step="any"></label>
   </div>
   <div id="orbitOut"></div>
 </section>
@@ -472,6 +473,11 @@ function rows(arr) {
     if (r.length === 1) return `<tr><th colspan="2" class="sub">${r[0]}</th></tr>`;
     return `<tr${r[2] ? ' class="best"' : ''}><td>${r[0]}</td><td>${r[1]}</td></tr>`;
   }).join('') + '</table>';
+}
+// section header + rows split into two side-by-side tables
+function rows2(title, arr) {
+  const half = Math.ceil(arr.length/2);
+  return rows([[title]]) + `<div class="two res2">${rows(arr.slice(0, half))}${rows(arr.slice(half))}</div>`;
 }
 const msg = (t, cls = 'warn') => `<div class="msg ${cls}">${t}</div>`;
 const fuelBtn = dv => Number.isFinite(dv) ? `<button class="usefuel" data-dv="${Math.abs(dv)}" title="Send this ΔV to the propellant card">→ fuel</button>` : '';
@@ -844,12 +850,12 @@ function updateOrbitCard(o) {
   if (!o.valid) { out('orbitOut', msg(`Enter a valid closed orbit: ${m`\mu > 0`}, ${m`a > 0`}, ${m`0 \le e < 1`} and finite angles.`, 'bad')); return; }
   let html = '';
   if (o.rp <= o.R) html += msg(`Perigee radius (${km(o.rp)}) is below the body surface (${m`R`} = ${km(o.R)}).`, 'bad');
-  html += rows([
-    ['Derived orbit'],
+  html += rows2('Derived orbit', [
     [m`p = a(1-e^2)`, km(o.p)], [m`r_p\ /\ h_p`, `${km(o.rp)} / ${km(o.rp - o.R)}`], [m`r_a\ /\ h_a`, `${km(o.ra)} / ${km(o.ra - o.R)}`],
     [m`T = 2\pi\sqrt{a^3/\mu}`, fmtTime(o.T)], [m`n`, `${f(o.n*R2D*86400, 3)} °/day`], [m`\varepsilon = -\mu/2a`, `${f(o.eps, 4)} km²/s²`], [m`h = \sqrt{\mu p}`, `${f(o.h, 2)} km²/s`],
-    [m`V_p\ /\ V_a`, `${f(o.Vp, 4)} / ${f(o.Va, 4)} km/s`],
-    [`At the current point ${m`\theta_0 = ${f(o.th*R2D, 2)}^\circ`}`],
+    [m`V_p\ /\ V_a`, `${f(o.Vp, 4)} / ${f(o.Va, 4)} km/s`]
+  ]);
+  html += rows2(`Initial point ${m`\theta_0 = ${f(o.th*R2D, 2)}^\circ`}`, [
     [m`r\ /\ h`, `${km(o.r)} / ${km(o.r - o.R)}`], [m`V`, kms(o.V)], [m`\gamma`, deg(o.gam*R2D)],
     ['Time since perigee', fmtTime(tSincePeri(o.mu, o.a, o.e, o.th))]
   ]);
