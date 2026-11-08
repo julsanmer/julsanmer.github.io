@@ -181,15 +181,14 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
   <div class="tabs" role="tablist">
     <button role="tab" data-tab="single" aria-selected="true">Coplanar impulse</button>
     <button role="tab" data-tab="transfer">Hohmann &amp; bi-elliptic</button>
-    <button role="tab" data-tab="plane">Inclination / RAAN</button>
-    <button role="tab" data-tab="apsides">Line of apsides</button>
+    <button role="tab" data-tab="plane">Out-of-plane impulse</button>
     <button role="tab" data-tab="phasing">Phasing</button>
   </div>
 
   <!-- ---------- SINGLE IMPULSE ---------- -->
   <div class="panel active" id="panel-single">
     <div class="card">
-      <h3>Velocity triangle at a chosen burn point \(\theta_i\)</h3>
+      <h3>Coplanar velocity triangle at burn point \(\theta_i\)</h3>
       <p class="lead">Phasor solution: \(V_f\angle\varphi = \Delta V\angle\psi + V_i\angle 0^\circ\). Both \(\psi\) and \(\varphi\) are measured from \(\vec V_i\) in the same sense, positive when the flight-path angle increases (\(\Delta\vec V\) tilted towards the outward radial direction); \(\psi = 0^\circ\) is a prograde tangential burn, \(\psi = 180^\circ\) retrograde. The spacecraft coasts from \(\theta_0\) to \(\theta_i\) before the impulse.</p>
       <div class="radios">
         <label><input type="radio" name="trimode" value="fwd" checked> Given \(\Delta V,\ \psi\) → find \(V_f,\ \varphi\) and the new orbit</label>
@@ -215,6 +214,24 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
     </div>
 
     <div class="card">
+      <h3>General change of coplanar orbit \((a, e, \omega)\)</h3>
+      <p class="lead">Orbits must have intersection points between them. There is an intersection if \(A^2+B^2 \ge C^2\) from the equation \(A\sin\theta_i + B\cos\theta_i = C\). This equation can be solved and, given \(\theta_i\), the velocity triangle can be posed.</p>
+      <div class="grid">
+        <label><span class="lbl">\(a_f\) (<span class="uL">km</span>)</span><input id="gen_a" type="number" step="any" value="9000"></label>
+        <label><span class="lbl">\(e_f\)</span><input id="gen_e" type="number" step="any" value="0.3"></label>
+        <label><span class="lbl">\(\omega_f\) (°)</span><input id="gen_w" type="number" step="any" value="30"></label>
+        <label><span class="lbl">Solution</span><select id="gen_sol"><option value="1">Option 1</option><option value="2">Option 2</option></select></label>
+      </div>
+      <div class="two">
+        <div>
+          <div id="genOut"></div>
+          <div class="plotbox" style="margin-top:8px;min-height:140px"><svg id="genVec" viewBox="0 0 10 5" style="aspect-ratio:2/1"></svg></div>
+        </div>
+        <div><div class="plotbox"><svg id="genPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="genLeg"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
       <h3>Change of apoapsis / periapsis and circularization</h3>
       <p class="lead">Rule: to change the apoapsis, burn tangentially at periapsis; to change the periapsis, burn tangentially at apoapsis.</p>
       <div class="grid">
@@ -235,20 +252,15 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
     </div>
 
     <div class="card">
-      <h3>General change of coplanar orbit \((a, e, \omega)\)</h3>
-      <p class="lead">Orbits must have intersection points between them. There is an intersection if \(A^2+B^2 \ge C^2\) from the equation \(A\sin\theta_i + B\cos\theta_i = C\). This equation can be solved and, given \(\theta_i\), the velocity triangle can be posed.</p>
+      <h3>Rotation of the line of apsides</h3>
+      <p class="lead">The goal is to rotate the line of apsides by \(\Delta\omega\) keeping the orbit shape \((a, e)\). Accordingly \(V_i = V_f\). This maneuver can be done at two specific points in the orbit.</p>
       <div class="grid">
-        <label><span class="lbl">\(a_f\) (<span class="uL">km</span>)</span><input id="gen_a" type="number" step="any" value="9000"></label>
-        <label><span class="lbl">\(e_f\)</span><input id="gen_e" type="number" step="any" value="0.3"></label>
-        <label><span class="lbl">\(\omega_f\) (°)</span><input id="gen_w" type="number" step="any" value="30"></label>
-        <label><span class="lbl">Solution</span><select id="gen_sol"><option value="1">Option 1</option><option value="2">Option 2</option></select></label>
+        <label><span class="lbl">\(\Delta\omega\) (°)</span><input id="rot_dw" type="number" step="any" value="60"></label>
+        <label><span class="lbl">Animate solution</span><select id="rot_sol"><option value="1">solution 1 (θᵢ = Δω/2)</option><option value="2">solution 2 (θᵢ = 180° + Δω/2)</option></select></label>
       </div>
       <div class="two">
-        <div>
-          <div id="genOut"></div>
-          <div class="plotbox" style="margin-top:8px;min-height:140px"><svg id="genVec" viewBox="0 0 10 5" style="aspect-ratio:2/1"></svg></div>
-        </div>
-        <div><div class="plotbox"><svg id="genPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="genLeg"></div></div>
+        <div id="rotOut"></div>
+        <div><div class="plotbox"><svg id="rotPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="rotLeg"></div></div>
       </div>
     </div>
   </div>
@@ -328,47 +340,39 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
       <p class="lead">The goal is to find a more cost efficient maneuver than the inclination change with a single impulse. The key idea is to do the inclination change far from the central body at a radius \(r_t\) where velocity is lower. To do so, a first prograde tangent impulse has to be done to raise the apoapsis. Finally, a third retrograde tangent impulse (antisymmetric to the first one) is done when returning to the initial point to circularize the orbit.</p>
       <div class="grid">
         <label><span class="lbl">\(\Delta i\) (°)</span><input id="t3_di" type="number" step="any" value="50"></label>
-        <label><span class="lbl">\(\lambda = r_2/r_1\)</span><input id="t3_lam" type="number" step="any" value="2"></label>
-        <label><span class="lbl">&nbsp;</span><button class="smallbtn" id="t3_opt">Set \(\lambda = \lambda_{\mathrm{opt}}\)</button></label>
+        <label><span class="lbl">\(\beta = r_t/r_i\)</span><input id="t3_lam" type="number" step="any" value="2"></label>
+        <label><span class="lbl">&nbsp;</span><button class="smallbtn" id="t3_opt">Set \(\beta = \beta_{\mathrm{opt}}\)</button></label>
       </div>
       <div class="two">
         <div id="t3Out"></div>
-        <div><div class="plotbox"><svg id="t3Plot" viewBox="0 0 10 10"></svg></div><div class="legend" id="t3Leg"></div><p class="note">The plane change at \(r_2\) must happen on the line of nodes, so the transfer apoapsis is placed at the ascending node; the first impulse is at the descending node.</p></div>
+        <div><div class="plotbox"><svg id="t3Plot" viewBox="0 0 10 10"></svg></div><div class="legend" id="t3Leg"></div><p class="note">The plane change at \(r_t\) must happen on the line of nodes, so the transfer apoapsis is placed at the ascending node; the first impulse is at the descending node.</p></div>
       </div>
     </div>
 
     <div class="card">
-      <h3>Hohmann transfer with plane change</h3>
+      <h3>Hohmann transfer with inclination change</h3>
       <p class="lead">Combine the radius change and the plane change. The plane change \(\Delta i\) can be applied at the first impulse, the second, or split (fraction \(\alpha\) at the first burn). Each impulse follows the law of cosines:
       \[\Delta V_1^2 = V_{c1}^2 + V_{t1}^2 - 2V_{c1}V_{t1}\cos(\alpha\,\Delta i),\qquad \Delta V_2^2 = V_{c2}^2 + V_{t2}^2 - 2V_{c2}V_{t2}\cos\bigl((1-\alpha)\Delta i\bigr).\]
-      In practice the whole change is applied at the farther impulse; the exact optimum over \(\alpha\) is also computed.</p>
+      In a theoretical exercise, we will apply the inclination change at the farthest point. In practice, the optimum split \(\alpha\) is always computed since fuel is scarce in space.</p>
       <div class="grid">
         <label><span class="lbl">Final circular radius \(r_f\) (<span class="uL">km</span>)</span><input id="hp_rf" type="number" step="any" value="42164"></label>
         <label><span class="lbl">\(\Delta i\) (°)</span><input id="hp_di" type="number" step="any" value="28.5"></label>
         <label><span class="lbl">Custom split \(\alpha\) (fraction at 1st burn)</span><input id="hp_alpha" type="number" step="0.01" min="0" max="1" value="0.1"></label>
+        <label><span class="lbl">&nbsp;</span><button class="smallbtn" id="hp_opt">Set \(\alpha = \alpha_{\mathrm{opt}}\)</button></label>
       </div>
       <div class="two">
-        <div id="hpOut"></div>
+        <div>
+          <div id="hpOut"></div>
+          <div class="two" style="margin-top:8px">
+            <div><div class="plotbox" style="min-height:120px"><svg id="hpVec1" viewBox="0 0 10 5" style="aspect-ratio:2/1"></svg></div><p class="note">1st burn: \(\vec V_i \to \vec V_H(r_i)\), plane change \(\Delta i_1\).</p></div>
+            <div><div class="plotbox" style="min-height:120px"><svg id="hpVec2" viewBox="0 0 10 5" style="aspect-ratio:2/1"></svg></div><p class="note">2nd burn: \(\vec V_H(r_f) \to \vec V_f\), plane change \(\Delta i_2\).</p></div>
+          </div>
+        </div>
         <div><div class="plotbox"><svg id="hpPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="hpLeg"></div><p class="note">Drawn and animated with the whole plane change at the farther impulse, which is placed on the line of nodes.</p></div>
       </div>
     </div>
   </div>
 
-  <!-- ---------- APSIDES ---------- -->
-  <div class="panel" id="panel-apsides">
-    <div class="card">
-      <h3>Rotation of the line of apsides</h3>
-      <p class="lead">The goal is to rotate the line of apsides by \(\Delta\omega\) keeping the orbit shape \((a, e)\). Accordingly \(V_i = V_f\). This maneuver can be done at two specific points in the orbit.</p>
-      <div class="grid">
-        <label><span class="lbl">\(\Delta\omega\) (°)</span><input id="rot_dw" type="number" step="any" value="60"></label>
-        <label><span class="lbl">Animate solution</span><select id="rot_sol"><option value="1">solution 1 (θᵢ = Δω/2)</option><option value="2">solution 2 (θᵢ = 180° + Δω/2)</option></select></label>
-      </div>
-      <div class="two">
-        <div id="rotOut"></div>
-        <div><div class="plotbox"><svg id="rotPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="rotLeg"></div></div>
-      </div>
-    </div>
-  </div>
 
   <!-- ---------- PHASING ---------- -->
   <div class="panel" id="panel-phasing">
@@ -964,7 +968,7 @@ const escClip = (o, r) => 2.2*Math.max(o.hyp ? o.rp : o.ra, r); // radius at whi
 const finalLegOf = (orb, th0, label, rclip) => orb.e < 1 ? { orb, th0, th1: th0 + TWO_PI, label } : { orb, th0, rclip, label: label + ' (escaping)' };
 function needClosed(o, outId, plotId, legId) {
   if (!o.hyp) return false;
-  out(outId, msg(`This maneuver needs a closed (circular or elliptic) initial orbit; the defined trajectory is hyperbolic (${m`e = ${f(o.e, 4)}`}). Use the coplanar-impulse, inclination / RAAN or line-of-apsides cards.`, 'warn'));
+  out(outId, msg(`This maneuver needs a closed (circular or elliptic) initial orbit; the defined trajectory is hyperbolic (${m`e = ${f(o.e, 4)}`}). Use the coplanar-impulse, out-of-plane impulse or line-of-apsides cards.`, 'warn'));
   plot(plotId, legId, [{ p: o.p, e: o.e, w: o.w, color: CI, label: 'initial hyperbola' }], [], o.R);
   return true;
 }
@@ -1309,28 +1313,30 @@ function updateThree(o) {
   if (needClosed(o, 't3Out', 't3Plot', 't3Leg')) return;
   const di = val('t3_di')*D2R, lam = val('t3_lam'), mu = o.mu, r1 = o.a, V1 = Math.sqrt(mu/r1);
   let html = '';
-  if (!o.circ) html += msg(`Formulas assume a circular orbit; using ${m`r_1 = a`} = ${km(r1)}.`, 'warn');
+  if (!o.circ) html += msg(`Formulas assume a circular orbit; using ${m`r_i = a`} = ${km(r1)}.`, 'warn');
   const s = Math.sin(di/2), single = 2*V1*s;
-  const lamOpt = s < 0.5 ? s/(1 - 2*s) : Infinity;
   const diDeg = di*R2D;
-  const rule = diDeg <= 38.94 ? `${m`\Delta i \le 38.94^\circ`}: the three-impulse maneuver is not worth it (${m`\lambda_{\mathrm{opt}} \le 1`}); use the single impulse.` : (diDeg <= 60 ? `${m`38.94^\circ < \Delta i \le 60^\circ`}: use ${m`\lambda = \lambda_{\mathrm{opt}} = ${f(lamOpt, 4)}`}.` : `${m`\Delta i > 60^\circ`}: use ${m`\lambda`} as large as possible (bi-parabolic limit).`);
+  const optInf = diDeg > 60; // beyond 60° the optimum is β → ∞ (the button then sets a large β)
+  const lamOpt = diDeg <= 38.94 ? 1 : (optInf ? 50 : s/(1 - 2*s));
+  const rule = diDeg <= 38.94 ? `${m`\Delta i \le 38.94^\circ`}: the three-impulse maneuver is not worth it, ${m`\beta_{\mathrm{opt}} = 1`} (single impulse).` : (diDeg <= 60 ? `${m`38.94^\circ < \Delta i \le 60^\circ`}: use ${m`\beta = \beta_{\mathrm{opt}} = ${f(lamOpt, 4)}`}.` : `${m`\Delta i > 60^\circ`}: use ${m`\beta`} as large as possible (bi-parabolic limit).`);
   const costAt = L => { const r2 = L*r1, at = (r1 + r2)/2; const d1 = vis(mu, r1, at) - V1, d2 = 2*vis(mu, r2, at)*s; return { d1, d2, T: 2*Math.abs(d1) + d2, at, r2 }; };
-  if (!(lam >= 1)) html += msg(`${m`\lambda`} must be ≥ 1 (${m`r_2 \ge r_1`}).`, 'bad');
+  if (!(lam >= 1)) html += msg(`${m`\beta`} must be ≥ 1 (${m`r_t \ge r_i`}).`, 'bad');
   const c = costAt(lam);
+  const circ0 = { p: r1, e: 0, w: o.w }, thNode0 = unwrapAfter(Math.PI - o.w, o.th), tCoast = tofPeri(circ0, mu, thNode0) - tofPeri(circ0, mu, o.th), Thalf = Math.PI*Math.sqrt(c.at**3/mu);
   html += rows([
-    ['Single impulse (reference)'], [m`V_1,\quad \Delta V = 2V_1\sin(\Delta i/2)`, `${fv(V1)} ${uV()}, ${fv(single)} ${uV()}`], mFrow(single, m`m_F\ /\ m_f` + ' (single impulse)'),
-    [`Three impulses with ${m`\lambda = ${f(lam, 4)}`}`],
-    [m`r_2 = \lambda r_1,\ a_t`, `${fl(c.r2)}, ${fl(c.at)} ${uL()}`], [m`\Delta V_1 = \Delta V_3` + ' (tangential)', kms(c.d1)], [m`\Delta V_2` + ' (plane change at ' + m`r_2` + ')', kms(c.d2)],
-    [m`\Delta V_T = 2\Delta V_1 + \Delta V_2`, kms(c.T), c.T < single], mFrow(c.T, m`m_F\ /\ m_f` + ' (three impulses)'), [m`\Delta V_T / V_1` + ' (formula)', f(2*(Math.sqrt(2*lam/(1 + lam))*(1 + s/lam) - 1), 5)],
-    ['Saving vs single impulse', `${fdv(single - c.T)} (${f((1 - c.T/single)*100, 2)} %)`],
-    ['Total time (two half ellipses)', fmtTime(2*Math.PI*Math.sqrt(c.at**3/mu))],
-    ['Optimum'], [m`\lambda_{\mathrm{opt}} = \dfrac{\sin(\Delta i/2)}{1 - 2\sin(\Delta i/2)}`, f(lamOpt, 4)], [m`\lambda \to \infty:\ \Delta V_T \to 2V_1(\sqrt2 - 1)`, kms(2*V1*(Math.SQRT2 - 1))]
+    ['Single impulse (reference)'], [m`V_i\ /\ \Delta V`, `${fv(V1)} / ${fv(single)} ${uV()}`], mFrow(single),
+    [`Three impulses with ${m`\beta = ${f(lam, 4)}`}`],
+    [m`r_i\ /\ r_t\ /\ a_t`, `${fl(r1)} / ${fl(c.r2)} / ${fl(c.at)} ${uL()}`], [m`V_i\ /\ V_t`, `${fv(V1)} / ${fv(vis(mu, c.r2, c.at))} ${uV()}`], [m`\lvert\Delta V_1\rvert`, `${kms(c.d1)} <span class="dim">(prograde)</span>`], [m`\lvert\Delta V_2\rvert`, `${kms(c.d2)} <span class="dim">(out-of-plane)</span>`], [m`\lvert\Delta V_3\rvert`, `${kms(c.d1)} <span class="dim">(retrograde)</span>`],
+    [m`\Delta V_T`, kms(c.T)], ['Total time', fmtTime(2*Thalf)], mFrow(c.T),
+    ['Timeline'],
+    [`Coast from ${m`\theta_0`} to the descending node (${m`\theta_i = ${f(wrap360((Math.PI - o.w)*R2D), 1)}^\circ`})`, fmtTime(tCoast)], [`${m`\Delta V_1`} at`, fmtTime(tCoast)], [`${m`\Delta V_2`} at`, fmtTime(tCoast + Thalf)], [`${m`\Delta V_3`} at`, fmtTime(tCoast + 2*Thalf)],
+    ['Optimum'], [m`\beta_{\mathrm{opt}} = \max\Bigl(\dfrac{\sin(\Delta i/2)}{1 - 2\sin(\Delta i/2)},\ 1\Bigr)`, optInf ? '∞' : f(lamOpt, 4)], [m`\beta \to \infty:\ \Delta V_T \to 2V_1(\sqrt2 - 1)`, kms(2*V1*(Math.SQRT2 - 1))]
   ]);
   html += msg(rule, diDeg <= 38.94 ? 'warn' : 'ok');
   const grid = [1, 1.5, 2, 3, 5, 10, 20, 50];
-  if (Number.isFinite(lamOpt) && lamOpt > 1) grid.push(lamOpt);
+  if (!grid.includes(lamOpt)) grid.push(lamOpt);
   grid.sort((a, b) => a - b);
-  html += `<table class="cmp"><tr><th>${m`\lambda`}</th><th>${m`\Delta V_1 = \Delta V_3`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th><th>${m`\Delta V_T/V_1`}</th></tr>` + grid.map(L => { const q = costAt(L); return `<tr${L === lamOpt ? ' class="best"' : ''}><td>${f(L, 3)}${L === lamOpt ? ' (opt)' : ''}</td><td>${f(q.d1, 4)}</td><td>${f(q.d2, 4)}</td><td>${f(q.T, 4)}</td><td>${f(q.T/V1, 4)}</td></tr>`; }).join('') + `<tr><td>∞</td><td>${f(V1*(Math.SQRT2 - 1), 4)}</td><td>0</td><td>${f(2*V1*(Math.SQRT2 - 1), 4)}</td><td>${f(2*(Math.SQRT2 - 1), 4)}</td></tr></table>`;
+  html += `<table class="cmp"><tr><th>${m`\beta`}</th><th>${m`\Delta V_1 = \Delta V_3`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th><th>time</th></tr>` + grid.map(L => { const q = costAt(L); const isOpt = L === lamOpt && !optInf; return `<tr${isOpt ? ' class="best"' : ''}><td>${f(L, 3)}${isOpt ? ' (opt)' : ''}</td><td>${f(q.d1, 4)}</td><td>${f(q.d2, 4)}</td><td>${f(q.T, 4)}</td><td>${fmtTime(2*Math.PI*Math.sqrt(q.at**3/mu), true)}</td></tr>`; }).join('') + `<tr${optInf ? ' class="best"' : ''}><td>∞${optInf ? ' (opt)' : ''}</td><td>${f(V1*(Math.SQRT2 - 1), 4)}</td><td>0</td><td>${f(2*V1*(Math.SQRT2 - 1), 4)}</td><td>∞</td></tr></table>`;
   out('t3Out', html);
   if (lam >= 1) {
     const et = (c.r2 - r1)/(c.r2 + r1), pt = c.at*(1 - et*et), iF = o.i + di;
@@ -1352,7 +1358,7 @@ function updateThree(o) {
       { x: -r1, y: 0, i: o.i, Om: o.Om, color: CP, label: 'ΔV₁' }, { x: c.r2, y: 0, i: o.i, Om: o.Om, color: CP, label: 'ΔV₂ (node)' }, { x: -r1, y: 0, i: iF, Om: o.Om, color: CP, label: 'ΔV₃' }
     ], o.R, { anim: { tracks: [track] } });
   }
-  $('t3_opt').onclick = () => { if (Number.isFinite(lamOpt) && lamOpt > 1) { $('t3_lam').value = +lamOpt.toFixed(4); update(); } };
+  $('t3_opt').onclick = () => { if (Number.isFinite(lamOpt)) { $('t3_lam').value = +lamOpt.toFixed(4); update(); } };
 }
 
 function updateHohPlane(o) {
@@ -1365,8 +1371,6 @@ function updateHohPlane(o) {
   const cost = al => { const d1 = Math.sqrt(Vc1*Vc1 + Vt1*Vt1 - 2*Vc1*Vt1*Math.cos(al*di)), d2 = Math.sqrt(Vc2*Vc2 + Vt2*Vt2 - 2*Vc2*Vt2*Math.cos((1 - al)*di)); return { d1, d2, T: d1 + d2 }; };
   const farther = rf >= ri ? 0 : 1, nearer = 1 - farther;
   const alOpt = minimize1D(al => cost(al).T, 0, 1);
-  const hoh = Math.abs(Vt1 - Vc1) + Math.abs(Vc2 - Vt2);
-  const sep = hoh + 2*(rf >= ri ? Vc2 : Vc1)*Math.sin(di/2);
   const strategies = [
     { name: `All at the farther impulse (${m`\alpha = ${farther}`})`, al: farther },
     { name: `All at the nearer impulse (${m`\alpha = ${nearer}`})`, al: nearer },
@@ -1374,11 +1378,16 @@ function updateHohPlane(o) {
     { name: `Custom split (${m`\alpha = ${f(alphaC, 3)}`})`, al: alphaC }
   ].map(s => ({ ...s, ...cost(s.al) }));
   const best = strategies.reduce((mn, s) => s.T < mn.T ? s : mn, strategies[0]);
-  html += rows([['Geometry'], [m`r_i \to r_f,\ \Delta i`, `${fl(ri)} → ${fl(rf)} ${uL()}, ${deg(di*R2D)}`], [m`V_{c1},\ V_{t1}` + ' (at ' + m`r_i` + ')', `${fv(Vc1)}, ${fv(Vt1)} ${uV()}`], [m`V_{t2},\ V_{c2}` + ' (at ' + m`r_f` + ')', `${fv(Vt2)}, ${fv(Vc2)} ${uV()}`],
-    ['Pure Hohmann (no plane change)', kms(hoh)], ['Separate maneuvers: Hohmann + plane change on the farther circular orbit', kms(sep)], mFrow(sep, m`m_F\ /\ m_f` + ' (separate maneuvers)')]);
-  html += `<table class="cmp"><tr><th>Strategy</th><th>${m`\Delta i`} at 1st</th><th>${m`\Delta i`} at 2nd</th><th>${m`\Delta V_1`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th><th>${m`m_F/m_0`}</th></tr>` + strategies.map(s => `<tr${s === best ? ' class="best"' : ''}><td>${s.name}</td><td>${f(s.al*di*R2D, 3)}°</td><td>${f((1 - s.al)*di*R2D, 3)}°</td><td>${fv(s.d1)}</td><td>${fv(s.d2)}</td><td>${fv(s.T)} ${uV()}</td><td>${mFcell(s.T)}</td></tr>`).join('') + '</table>';
-  html += msg(`Applying the whole plane change at the farther impulse costs ${fdv(strategies[0].T - strategies[2].T)} more than the exact optimum, and saves ${fdv(sep - strategies[0].T)} versus doing the two maneuvers separately.`, 'ok');
+  html += rows([['Hohmann with inclination change'], [m`r_i \to r_f,\ \Delta i`, `${fl(ri)} → ${fl(rf)} ${uL()}, ${deg(di*R2D)}`], [m`V_i\ /\ V_f`, `${fv(Vc1)} / ${fv(Vc2)} ${uV()}`],
+    [m`a_H,\ e_H`, `${fl(aH)} ${uL()}, ${f(Math.abs(rf - ri)/(rf + ri), 5)}`], [m`V_H(r_i)\ /\ V_H(r_f)`, `${fv(Vt1)} / ${fv(Vt2)} ${uV()}`],
+    [m`\Delta i_1\ /\ \Delta i_2`, `${deg(alphaC*di*R2D)} / ${deg((1 - alphaC)*di*R2D)}`], [m`T_H`, fmtTime(Math.PI*Math.sqrt(aH**3/mu))], mFrow(cost(alphaC).T)
+  ]);
+  { const circ0 = { p: ri, e: 0, w: o.w }, thN = unwrapAfter(Math.PI - o.w, o.th), tC = tofPeri(circ0, mu, thN) - tofPeri(circ0, mu, o.th), TH = Math.PI*Math.sqrt(aH**3/mu);
+    html += rows([['Timeline'], [`Coast from ${m`\theta_0`} to the descending node (${m`\theta_i = ${f(wrap360((Math.PI - o.w)*R2D), 1)}^\circ`})`, fmtTime(tC)], [`${m`\Delta V_1`} at`, fmtTime(tC)], [`${m`\Delta V_2`} at`, fmtTime(tC + TH)]]); }
+  html += `<table class="cmp"><tr><th>Strategy</th><th>${m`\Delta i_1`}</th><th>${m`\Delta i_2`}</th><th>${m`\Delta V_1`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th></tr>` + strategies.map(s => `<tr${s === best ? ' class="best"' : ''}><td>${s.name}</td><td>${f(s.al*di*R2D, 3)}°</td><td>${f((1 - s.al)*di*R2D, 3)}°</td><td>${fv(s.d1)}</td><td>${fv(s.d2)}</td><td>${fv(s.T)} ${uV()}</td></tr>`).join('') + '</table>';
   out('hpOut', html);
+  plotTriangle('hpVec1', Vc1, Vt1, alphaC*di); plotTriangle('hpVec2', Vt2, Vc2, (1 - alphaC)*di);
+  $('hp_opt').onclick = () => { $('hp_alpha').value = +alOpt.toFixed(4); update(); };
   const eH = Math.abs(rf - ri)/(rf + ri), pH = aH*(1 - eH*eH), iF = o.i + di, up = rf >= ri;
   const circI = { p: ri, e: 0, w: o.w, i: o.i, Om: o.Om }, circF = { p: rf, e: 0, w: o.w, i: iF, Om: o.Om };
   const ell = { p: pH, e: eH, w: Math.PI, i: up ? o.i : iF, Om: o.Om };
@@ -1536,7 +1545,7 @@ function update() {
 
 /* ---------- wiring ---------- */
 function typesetStatic() {
-  document.querySelectorAll('header p, h3, p.lead, p.note, label > span.lbl, .radios label, footer, #t3_opt, #l_aps_esc').forEach(typeset);
+  document.querySelectorAll('header p, h3, p.lead, p.note, label > span.lbl, .radios label, footer, #t3_opt, #hp_opt, #l_aps_esc').forEach(typeset);
 }
 /* default scenarios per central body, stored in that body's default unit system (DEFAULT_UNITS): Earth in km, km/s; Moon and Sun in UD, UV. Sun: planetary scale (1 UD = 1 AU). */
 const LEN_IDS = ['gen_a', 'hoh_rf', 'bie_rf', 'bie_rt', 'cox_rp', 'cox_ra', 'hp_rf', 'aps_target'], VEL_IDS = ['tri_dv', 'tri_vf'];
