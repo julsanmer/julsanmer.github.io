@@ -180,7 +180,7 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
   <h2>3 · Maneuver</h2>
   <div class="tabs" role="tablist">
     <button role="tab" data-tab="single" aria-selected="true">Coplanar impulse</button>
-    <button role="tab" data-tab="transfer">Hohmann &amp; bi-elliptic</button>
+    <button role="tab" data-tab="transfer">Hohmann &amp; Bi-elliptic</button>
     <button role="tab" data-tab="plane">Out-of-plane impulse</button>
     <button role="tab" data-tab="phasing">Phasing</button>
   </div>
@@ -378,9 +378,7 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
   <div class="panel" id="panel-phasing">
     <div class="card">
       <h3>Phasing in a circular orbit</h3>
-      <p class="lead">Interceptor at \(\theta_0\); target on the same orbit, trailing or leading by \(\nu\). The interceptor coasts to \(\theta_i\) (the phase angle is preserved), then enters the phasing orbit. New period \(T_{ph} = T\bigl(1 \mp \tfrac{\nu}{2\pi k}\bigr)\) (− trailing, + leading), then
-      \[a_{ph} = \Bigl(\mu\bigl(\tfrac{T_{ph}}{2\pi}\bigr)^2\Bigr)^{1/3},\qquad \Delta V_1 = \sqrt{\frac{2\mu}{r}-\frac{\mu}{a_{ph}}} - \sqrt{\frac{\mu}{r}},\qquad \Delta V_T = 2\lvert\Delta V_1\rvert ,\]
-      with total maneuver time \(k\,T_{ph}\).</p>
+      <p class="lead">Both interceptor and target are in the same circular orbit separated by an angle \(\Delta\nu\). The phasing maneuver inserts the interceptor in a higher (if target is behind) or lower (if target is ahead) altitude orbit of period \(T_{ph} = T\bigl(1 \mp \tfrac{\Delta\nu}{2\pi k}\bigr)\). The integer \(k\) is the number of interceptor revolutions in the phasing orbit.</p>
       <div class="grid">
         <label><span class="lbl">Phase angle \(\nu\) (°)</span><input id="phc_nu" type="number" step="any" value="15"></label>
         <label><span class="lbl">Interceptor is</span><select id="phc_case"><option value="trail">trailing (target ahead by ν)</option><option value="lead">leading (target behind by ν)</option></select></label>
@@ -388,23 +386,28 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
         <label><span class="lbl">First impulse at \(\theta_i\) (°)</span><input id="phc_thb" type="number" step="any" value="0"></label>
       </div>
       <div class="two">
-        <div id="phcOut"></div>
+        <div>
+          <div id="phcOut"></div>
+          <div class="plotbox" style="margin-top:8px"><svg id="phcPhase" viewBox="0 0 10 5" style="aspect-ratio:2/1"></svg></div><p class="note">Phase angle between target and interceptor along the maneuver; the marker follows the animation.</p>
+        </div>
         <div><div class="plotbox"><svg id="phcPlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="phcLeg"></div></div>
       </div>
     </div>
 
     <div class="card">
       <h3>Phasing in an elliptic orbit</h3>
-      <p class="lead">Angles are not swept uniformly, so phasing is done in time: with the interceptor at \(\theta_A = \theta_0\) and the target at \(\theta_B\), \(t_{AB} = \Delta t(\theta_B) - \Delta t(\theta_A)\) from Kepler's equation and \(T_{ph} = T - t_{AB}/k\). The burn is tangential, preferably at periapsis (largest \(V\), so the same \(\Delta V\) produces the largest change in \(a\) and \(T\)):
-      \[\Delta V_1 = \sqrt{\frac{2\mu}{r}-\frac{\mu}{a_{ph}}} - \sqrt{\frac{2\mu}{r}-\frac{\mu}{a}},\qquad \Delta V_T = 2\lvert\Delta V_1\rvert .\]</p>
+      <p class="lead">When doing phasing in an elliptical orbit, we need to pose the problem with time differences instead of angles. The interceptor is named as B and the target as A. The time difference between them at the interceptor burn time is \(t_{BA} = \Delta t_B(\theta_B) - \Delta t_A(\theta_A)\). Then the interceptor's phasing period has to be \(T_{ph} = T + t_{BA}/k\), with \(k\) the number of revolutions in the phasing orbit. Note that the phasing maneuver will depend on the interceptor's true anomaly \(\theta_B\) at the burn point.</p>
       <div class="grid">
-        <label><span class="lbl">Target true anomaly \(\theta_B\) (°)</span><input id="phe_thB" type="number" step="any" value="15"></label>
+        <label><span class="lbl">Initial target true anomaly \(\theta_{A,0}\) (°)</span><input id="phe_thB" type="number" step="any" value="15"></label>
         <label><span class="lbl">Revolutions \(k\)</span><input id="phe_k" type="number" step="1" min="1" value="1"></label>
-        <label><span class="lbl">Burn point</span><select id="phe_at"><option value="peri">next periapsis</option><option value="here">at θA (immediately)</option></select></label>
+        <label><span class="lbl">Interceptor burn at \(\theta_B\) (°)</span><input id="phe_thb" type="number" step="any" value="0"></label>
         <label><span class="lbl">Direction</span><select id="phe_dir"><option value="short">shortest (auto)</option><option value="trail">force trailing (Tph &lt; T)</option><option value="lead">force leading (Tph &gt; T)</option></select></label>
       </div>
       <div class="two">
-        <div id="pheOut"></div>
+        <div>
+          <div id="pheOut"></div>
+          <div class="plotbox" style="margin-top:8px"><svg id="phePhase" viewBox="0 0 10 5" style="aspect-ratio:2/1"></svg></div><p class="note">Phase angle between target and interceptor along the maneuver; the marker follows the animation.</p>
+        </div>
         <div><div class="plotbox"><svg id="phePlot" viewBox="0 0 10 10"></svg></div><div class="legend" id="pheLeg"></div></div>
       </div>
     </div>
@@ -670,6 +673,29 @@ function updateAnimUI(id) {
   bar.querySelector('.readout').innerHTML = `<b>${pos.seg.label}</b> &nbsp;·&nbsp; t = ${fmtTime(a.t, true)} <span class="dim">of ${fmtTime(a.total, true)}</span><br>${ev}`;
 }
 
+/* ---------- phase-angle chart (phasing cards): angle target − interceptor vs time ---------- */
+function phaseSamples(trSc, trTg, N = 400) {
+  const out = []; const total = Math.max(trSc.total, trTg.total);
+  for (let k = 0; k <= N; k++) { const t = total*k/N; const a = trackPos(trSc, t), b = trackPos(trTg, t); out.push({ t, ang: wrap180((Math.atan2(b.y, b.x) - Math.atan2(a.y, a.x))*R2D) }); }
+  return out;
+}
+function plotPhase(svgId, samples, tNow) {
+  const svg = $(svgId); if (!svg) return;
+  if (!samples || !samples.length) { svg.innerHTML = ''; return; }
+  const W = 10, H = 5, ml = 1.1, mr = 0.3, mt = 0.4, mb = 0.9; svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const tmax = samples[samples.length - 1].t || 1, kT = U.canon ? 1/U.UT : 1/3600; // x in UT or hours
+  let amin = Math.min(...samples.map(p => p.ang)), amax = Math.max(...samples.map(p => p.ang)); if (amax - amin < 1) { amin -= 1; amax += 1; } const pad = 0.08*(amax - amin); amin -= pad; amax += pad;
+  const X = t => ml + (W - ml - mr)*t/tmax, Y = a => mt + (H - mt - mb)*(amax - a)/(amax - amin);
+  const fs = 0.28; let g = '';
+  const nice = r => { const pw = Math.pow(10, Math.floor(Math.log10(r))); return [1, 2, 5, 10].map(k => k*pw).find(v => v >= r); };
+  const ys = nice((amax - amin)/4); for (let a = Math.ceil(amin/ys)*ys; a <= amax; a += ys) g += `<line x1="${ml}" y1="${Y(a)}" x2="${W - mr}" y2="${Y(a)}" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"/><text x="${ml - 0.1}" y="${Y(a) + fs*0.35}" font-size="${fs}" fill="var(--muted)" text-anchor="end">${f(a, 1)}°</text>`;
+  const xs = nice(tmax*kT/5); for (let x = 0; x <= tmax*kT + 1e-9; x += xs) g += `<line x1="${X(x/kT)}" y1="${mt}" x2="${X(x/kT)}" y2="${H - mb}" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"/><text x="${X(x/kT)}" y="${H - mb + fs*1.2}" font-size="${fs}" fill="var(--muted)" text-anchor="middle">${f(x, 2)}</text>`;
+  g += `<text x="${(ml + W - mr)/2}" y="${H - 0.1}" font-size="${fs}" fill="var(--muted)" text-anchor="middle">t (${U.canon ? 'UT' : 'h'})</text>`;
+  g += `<line x1="${ml}" y1="${Y(0)}" x2="${W - mr}" y2="${Y(0)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>`;
+  g += `<path d="${samples.map((p, k) => (k ? 'L' : 'M') + X(p.t).toFixed(3) + ' ' + Y(p.ang).toFixed(3)).join(' ')}" fill="none" stroke="${CS}" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+  if (Number.isFinite(tNow)) { const i = Math.min(samples.length - 1, Math.round(tNow/tmax*(samples.length - 1))); const p = samples[i]; g += `<line x1="${X(p.t)}" y1="${mt}" x2="${X(p.t)}" y2="${H - mb}" stroke="${CDV}" stroke-width="1" vector-effect="non-scaling-stroke"/><circle cx="${X(p.t)}" cy="${Y(p.ang)}" r="0.12" fill="${CS}" stroke="var(--surface)" stroke-width="1.5" vector-effect="non-scaling-stroke"/><text x="${X(p.t) + 0.15}" y="${mt + fs}" font-size="${fs}" fill="var(--text)">${f(p.ang, 1)}°</text>`; }
+  svg.innerHTML = g;
+}
 /* ---------- plotting: registry, 2D (SVG) and 3D (canvas) renderers ---------- */
 const PLOTS = {}, PMODE = {}, PVIEW = {};
 let CUR = null; // current global orbit (default plane for plots)
@@ -696,6 +722,7 @@ function render(id) {
   if (tools) { tools.querySelectorAll('[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === mode)); tools.classList.toggle('is3d', mode === '3d'); }
   svg.style.display = mode === '2d' ? '' : 'none'; if (cv) cv.style.display = mode === '3d' ? '' : 'none';
   if (mode === '2d') render2d(id); else render3d(id);
+  if (d.opts.onRender) d.opts.onRender(ANIM[id]);
 }
 function sampleOrbit(o, rclip, N) {
   const pts = []; if (!(o.p > 0)) return pts;
@@ -895,7 +922,14 @@ function plotTriangle(svgId, Vi, Vf, phi, gam) { // gam: flight-path angle of V_
       `<polygon points="${x2},${-y2} ${x2 - ux*hl - uy*hl*0.4},${-(y2 - uy*hl + ux*hl*0.4)} ${x2 - ux*hl + uy*hl*0.4},${-(y2 - uy*hl - ux*hl*0.4)}" fill="var(--muted)"/>` +
       `<text x="${x2 + ux*fs*0.9}" y="${-(y2 + uy*fs*0.9)}" font-size="${fs*0.9}" fill="var(--muted)" text-anchor="middle" dominant-baseline="middle" font-style="italic">${lab}</text>`;
   };
-  svg.innerHTML = (basis ? axisArrow(basis.rx, basis.ry, 'e𝑟') + axisArrow(basis.tx, basis.ty, 'eθ') : '') + arrow(ax, ay, bx, by, CI, 'Vᵢ') + arrow(ax, ay, cx, cy, CF, 'V𝑓') + arrow(bx, by, cx, cy, C1, 'ΔV');
+  // faint square grid in velocity units (step chosen as 1, 2 or 5 × 10^k so that ~8 cells span the width)
+  const kU = U.canon ? U.UV : 1; // drawing is in km/s; the grid step is a round number in the displayed velocity unit
+  const raw = vbW/kU/8, pw = Math.pow(10, Math.floor(Math.log10(raw))), stepD = [1, 2, 5, 10].map(k => k*pw).find(v => v >= raw), step = stepD*kU;
+  let grid = '';
+  for (let gx = Math.ceil(x0/step)*step; gx <= x0 + vbW; gx += step) grid += `<line x1="${gx}" y1="${y0}" x2="${gx}" y2="${y0 + vbH}" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+  for (let gy = Math.ceil(y0/step)*step; gy <= y0 + vbH; gy += step) grid += `<line x1="${x0}" y1="${gy}" x2="${x0 + vbW}" y2="${gy}" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+  grid += `<text x="${x0 + vbW - fs*0.3}" y="${y0 + vbH - fs*0.4}" font-size="${fs*0.8}" fill="var(--muted)" text-anchor="end">grid: ${f(stepD, 3)} ${uV()}</text>`;
+  svg.innerHTML = grid + (basis ? axisArrow(basis.rx, basis.ry, 'e𝑟') + axisArrow(basis.tx, basis.ty, 'eθ') : '') + arrow(ax, ay, bx, by, CI, 'Vᵢ') + arrow(ax, ay, cx, cy, CF, 'V𝑓') + arrow(bx, by, cx, cy, C1, 'ΔV');
 }
 
 /* ---------- global orbit ---------- */
@@ -959,6 +993,12 @@ function updateOrbitCard(o) {
   out('scOut', html);
 }
 // generic "coast on the initial orbit from θ0 to θi" leg
+// true anomaly reached from th0 after a flight time dt on a closed orbit (bisection on the monotonic tofPeri)
+function thetaAfter(orb, mu, th0, dt) {
+  const t0 = tofPeri(orb, mu, th0); let lo = th0, hi = th0 + TWO_PI; while (tofPeri(orb, mu, hi) - t0 < dt) hi += TWO_PI;
+  for (let k = 0; k < 60; k++) { const mid = (lo + hi)/2; if (tofPeri(orb, mu, mid) - t0 < dt) lo = mid; else hi = mid; }
+  return (lo + hi)/2;
+}
 // true anomaly (unwrapped) at which a burn at θi happens when coasting from θ0; NaN if it is not reachable on a hyperbola
 function coastTarget(o, thb) { if (!o.hyp) return unwrapAfter(thb, o.th); const t = wrapPi(thb); return (t >= o.th - 1e-9 && t < o.thInf - 1e-9) ? t : NaN; }
 const onArc = (o, th) => !o.hyp || Math.abs(wrapPi(th)) < o.thInf - 1e-9; // is θ a point of the (hyperbolic) trajectory?
@@ -1087,7 +1127,7 @@ function updateGeneral(o) {
   const sols = []; let best = null;
   if (D < 1e-9*Math.max(pi, pf)) {
     if (Math.abs(C) < 1e-6*Math.max(pi, pf)) html += msg(`Both orbits are circular with the same radius: any point works and ${m`\Delta V = 0`}.`, 'ok');
-    else html += msg('Both orbits are circular (or coaxial with identical shape factors) and have no common point: a transfer with at least two impulses is required (see the Hohmann &amp; bi-elliptic tab).', 'bad');
+    else html += msg('Both orbits are circular (or coaxial with identical shape factors) and have no common point: a transfer with at least two impulses is required (see the Hohmann &amp; Bi-elliptic tab).', 'bad');
   } else if (Math.abs(C) > D*(1 + 1e-12)) {
     html += msg(`${m`A^2 + B^2 < C^2`} (${m`D = ${f(D, 2)}`}, ${m`\lvert C\rvert = ${f(Math.abs(C), 2)}`}): the orbits do not intersect. A single impulse cannot do it; use a two-impulse transfer.`, 'bad');
   } else {
@@ -1454,9 +1494,10 @@ function updatePhasingCirc(o) {
   if (other <= o.R) html += msg(`The phasing orbit periapsis (${km(other)}) is below the body surface: increase ${m`k`} or use a leading solution.`, 'bad');
   html += rows([
     [cs === 'trail' ? `Trailing: target ahead by ${m`\nu`} → faster (lower) phasing orbit` : `Leading: target behind by ${m`\nu`} → slower (higher) phasing orbit`],
-    [m`T` + ' (common orbit)', fmtTime(T)], [m`T_{ph} = T\bigl(1 ${sign < 0 ? '-' : '+'} \tfrac{\nu}{2\pi k}\bigr)`, fmtTime(Tph)], [m`a_{ph}`, km(aph, 2)],
-    [`Phasing orbit ${sign < 0 ? m`r_a = r,\ r_p` : m`r_p = r,\ r_a`}`, `${km(r)}, ${km(other)}`], [m`e_{ph}`, f(Math.abs(other - r)/(other + r), 5)],
-    [m`\Delta V_1` + ' (tangential, signed)', kms(dv1)], [m`\Delta V_T = 2\lvert\Delta V_1\rvert`, kms(2*Math.abs(dv1))], mFrow(2*Math.abs(dv1)),
+    [m`T`, fmtTime(T)], [m`T_{ph}\ /\ a_{ph}`, `${fmtTime(Tph)} / ${km(aph, 2)}`],
+    [m`r_{p,ph}\ /\ r_{a,ph}`, `${km(Math.min(r, other))} / ${km(Math.max(r, other))}`],
+    [m`\lvert\Delta V_1\rvert`, `${kms(Math.abs(dv1))} <span class="dim">(${dv1 >= 0 ? 'prograde' : 'retrograde'})</span>`], [m`\lvert\Delta V_2\rvert`, `${kms(Math.abs(dv1))} <span class="dim">(${dv1 >= 0 ? 'retrograde' : 'prograde'})</span>`],
+    [m`\Delta V_T`, kms(2*Math.abs(dv1))], mFrow(2*Math.abs(dv1)),
     ['Timeline'],
     [`Coast from ${m`\theta_0`} to ${m`\theta_i`}`, fmtTime(tCoast)], [`Phasing time ${m`k\,T_{ph}`}`, fmtTime(k*Tph)], ['Rendezvous at', fmtTime(tCoast + k*Tph)]
   ]);
@@ -1473,23 +1514,24 @@ function updatePhasingCirc(o) {
   plot('phcPlot', 'phcLeg', [
     { p: r, e: 0, w: 0, color: CI, label: 'common orbit' },
     { ...ph.orb, color: C1, dash: true, label: 'phasing orbit' }
-  ], [{ x: r*Math.cos(A1), y: r*Math.sin(A1), color: CP, label: 'burns' }], o.R, { anim: { tracks: [trackSc, trackTg] } });
+  ], [{ x: r*Math.cos(A1), y: r*Math.sin(A1), color: CP, label: 'burns' }], o.R, { anim: { tracks: [trackSc, trackTg] }, onRender: (() => { const smp = phaseSamples(trackSc, trackTg); return a => plotPhase('phcPhase', smp, a ? a.t : 0); })() });
 }
 
 function updatePhasingEll(o) {
   if (needClosed(o, 'pheOut', 'phePlot', 'pheLeg')) return;
-  const thB = val('phe_thB')*D2R, k = Math.max(1, Math.round(val('phe_k') || 1)), at = $('phe_at').value, dir = $('phe_dir').value, mu = o.mu;
+  const thB = val('phe_thB')*D2R, k = Math.max(1, Math.round(val('phe_k') || 1)), dir = $('phe_dir').value, mu = o.mu;
   const T = o.T, tA = tSincePeri(mu, o.a, o.e, o.th), tB = tSincePeri(mu, o.a, o.e, thB);
   let tAB = tB - tA;
   if (dir === 'short') { tAB = ((tAB % T) + T) % T; if (tAB > T/2) tAB -= T; }
   else if (dir === 'trail') { tAB = ((tAB % T) + T) % T; }
   else { tAB = ((tAB % T) + T) % T; if (tAB > 0) tAB -= T; }
   const Tph = T - tAB/k, aph = Math.cbrt(mu*(Tph/TWO_PI)**2);
-  const r = at === 'peri' ? o.rp : o.r, thb = at === 'peri' ? 0 : o.th, gam = at === 'peri' ? 0 : o.gam;
+  const thb = wrapPi(val('phe_thb')*D2R), r = rAt(o.p, o.e, thb), gam = gamAt(o.e, thb), atPeri = Math.abs(thb) < 1e-9;
   const Vi = vis(mu, r, o.a), Vph = vis(mu, r, aph), dv1 = Vph - Vi;
   const ph = orbitFromState(mu, r, Vph, gam); const wph = o.w + thb - ph.th; const rpph = ph.p/(1 + ph.e);
-  const thBurn = at === 'peri' ? unwrapAfter(0, o.th) : o.th;
+  const thBurn = unwrapAfter(thb, o.th);
   const tCoast = tofPeri(o.orb, mu, thBurn) - tofPeri(o.orb, mu, o.th);
+  const thAb = thetaAfter(o.orb, mu, thB, tCoast); // target true anomaly when the interceptor burns
   let html = '';
   if (o.circ) html += msg(`Circular orbit: the result coincides with the circular phasing card (${m`\Delta t`} is proportional to the angle).`, 'ok');
   if (Math.abs(tAB) < 1e-6) html += msg('Interceptor and target coincide: nothing to do.', 'ok');
@@ -1498,37 +1540,40 @@ function updatePhasingEll(o) {
   else if (rpph <= o.R) html += msg(`Phasing orbit periapsis (${km(rpph)}) is below the body surface: increase ${m`k`} or change direction.`, 'bad');
   html += rows([
     ['Timing on the common orbit'],
-    [m`T`, fmtTime(T)], [`${m`\Delta t(\theta_A)`} from periapsis (interceptor at ${m`\theta_A = \theta_0 = ${f(o.th*R2D, 2)}^\circ`})`, fmtTime(tA)], [m`\Delta t(\theta_B)` + ' from periapsis', fmtTime(tB)],
-    [m`t_{AB} = \Delta t(\theta_B) - \Delta t(\theta_A)`, `${fmtTime(tAB)} <span class="dim">(${tAB > 0 ? 'trailing, ' + m`T_{ph} < T` : (tAB < 0 ? 'leading, ' + m`T_{ph} > T` : '')})</span>`],
+    [m`T`, fmtTime(T)], [m`\theta_{A,0} \to \theta_A`, `${deg(wrap360(thB*R2D))} → ${deg(wrap360(thAb*R2D))}`],
+    [m`\Delta t_B(\theta_B)\ /\ \Delta t_A(\theta_A)`, `${fmtTime(tSincePeri(mu, o.a, o.e, thb))} / ${fmtTime(tSincePeri(mu, o.a, o.e, thAb))}`],
+    [m`t_{BA}`, fmtTime(-tAB)],
     ['Phasing orbit'],
-    [m`T_{ph} = T - t_{AB}/k`, fmtTime(Tph)], [m`a_{ph}`, km(aph, 2)], [m`e_{ph},\ \omega_{ph}`, `${f(ph.e, 5)}, ${deg(wrap360(wph*R2D))}`], [m`r_{p,ph}\ /\ r_{a,ph}`, `${km(rpph)} / ${km(ph.e < 1 ? ph.p/(1 - ph.e) : Infinity)}`],
-    [`Burn point ${m`r`} (${at === 'peri' ? 'periapsis' : m`\theta_A`})`, km(r)], [m`V = \sqrt{2\mu/r - \mu/a}` + ' (original orbit)', kms(Vi)], [m`V_{ph} = \sqrt{2\mu/r - \mu/a_{ph}}`, kms(Vph)],
-    [m`\Delta V_1` + ' (tangential, signed)', kms(dv1)], [m`\Delta V_T = 2\lvert\Delta V_1\rvert`, kms(2*Math.abs(dv1))], mFrow(2*Math.abs(dv1)),
+    [m`T_{ph}\ /\ a_{ph}`, `${fmtTime(Tph)} / ${km(aph, 2)}`], [m`e_{ph}\ /\ \omega_{ph}`, `${f(ph.e, 5)} / ${deg(wrap360(wph*R2D))}`],
+    [m`r_{p,ph}\ /\ r_{a,ph}`, `${km(rpph)} / ${km(ph.e < 1 ? ph.p/(1 - ph.e) : Infinity)}`],
+    [m`r\ /\ V\ /\ V_{ph}` + ' (burn point)', `${km(r)} / ${kms(Vi)} / ${kms(Vph)}`],
+    [m`\lvert\Delta V_1\rvert`, `${kms(Math.abs(dv1))} <span class="dim">(${dv1 >= 0 ? 'prograde' : 'retrograde'})</span>`], [m`\lvert\Delta V_2\rvert`, `${kms(Math.abs(dv1))} <span class="dim">(${dv1 >= 0 ? 'retrograde' : 'prograde'})</span>`],
+    [m`\Delta V_T`, kms(2*Math.abs(dv1))], mFrow(2*Math.abs(dv1)),
     ['Timeline'],
     ['Coast to the burn point', fmtTime(tCoast)], [`Phasing time ${m`k\,T_{ph}`}`, fmtTime(k*Tph)], ['Rendezvous at', fmtTime(tCoast + k*Tph)]
   ]);
   out('pheOut', html);
   const rB = rAt(o.p, o.e, thB);
-  let anim = null;
+  let anim = null, pheRender = null;
   if (feasible) {
     const phOrb = { p: ph.p, e: ph.e, w: wph };
     const legs = [];
-    if (tCoast > 1e-9) legs.push({ orb: o.orb, th0: o.th, th1: thBurn, label: 'coasting to periapsis', burnAfter: 'ΔV₁' });
+    if (tCoast > 1e-9) legs.push({ orb: o.orb, th0: o.th, th1: thBurn, label: atPeri ? 'coasting to periapsis' : 'coasting to the burn point', burnAfter: 'ΔV₁' });
     legs.push({ orb: phOrb, th0: ph.th, th1: ph.th + TWO_PI*k, label: `${k} revolution${k > 1 ? 's' : ''} on the phasing orbit`, burnAfter: 'ΔV₂ (rendezvous)' });
     legs.push({ orb: o.orb, th0: thb, th1: thb + TWO_PI, label: 'back on the common orbit, together with the target' });
     if (tCoast <= 1e-9) { legs[0].label = 'ΔV₁ applied immediately; ' + legs[0].label; }
     const trackSc = animTrack(mu, legs, CS, 'interceptor');
     const trackTg = animTrack(mu, [{ orb: o.orb, th0: thB, dur: trackSc.total, label: 'target' }], CT, 'target'); trackTg.shape = 'square';
-    anim = { tracks: [trackSc, trackTg] };
+    anim = { tracks: [trackSc, trackTg] }; const smp = phaseSamples(trackSc, trackTg); pheRender = a => plotPhase('phePhase', smp, a ? a.t : 0);
   }
   plot('phePlot', 'pheLeg', [
     { p: o.p, e: o.e, w: o.w, color: CI, label: 'common orbit' },
     { p: ph.p, e: ph.e, w: wph, color: C1, dash: true, label: 'phasing orbit' }
   ], [
-    { x: o.r*Math.cos(o.th + o.w), y: o.r*Math.sin(o.th + o.w), color: CP, label: 'A (θ₀)' },
-    { x: rB*Math.cos(thB + o.w), y: rB*Math.sin(thB + o.w), color: CF, label: 'B' },
-    { x: r*Math.cos(thb + o.w), y: r*Math.sin(thb + o.w), color: C1, label: at === 'peri' ? 'burns (periapsis)' : '' }
-  ], o.R, { anim });
+    { x: o.r*Math.cos(o.th + o.w), y: o.r*Math.sin(o.th + o.w), color: CP, label: 'B (interceptor, θ₀)' },
+    { x: rB*Math.cos(thB + o.w), y: rB*Math.sin(thB + o.w), color: CF, label: 'A (target)' },
+    { x: r*Math.cos(thb + o.w), y: r*Math.sin(thb + o.w), color: C1, label: atPeri ? 'burns (periapsis)' : 'burns' }
+  ], o.R, { anim, onRender: pheRender || (() => plotPhase('phePhase', null)) });
 }
 
 /* ---------- master update ---------- */
