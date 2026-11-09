@@ -5,13 +5,19 @@ nav.navbar{
     align-items: center;
     background-color: teal;
     font-family: "Montserrat", sans-serif;
-    height: 60px;
+    min-height: 60px;
+    flex-wrap: wrap;
+    gap: 6px 24px;
+    padding: 6px 12px;
+    box-sizing: border-box;
 }
 ul.nav-links{
     display: flex;
-    justify-content: space-around;
-    width: 45%;
-    min-width: fit-content;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px 0;
+    margin: 0;
+    padding: 0;
 } 
 ul.nav-links li{
     list-style: none;
@@ -41,7 +47,7 @@ div.heading{
 /*These are classes for the publications section*/
 div.publications{
     align-items: center;
-    width: 1000px;
+    width: min(1000px, 92%);
     margin: 0 auto;
     font-size: 16px;
 }
@@ -81,7 +87,7 @@ li.publications {
 }
 div.projects {
     align-items: center;
-    width: 75%;
+    width: min(1000px, 92%);
     margin: 0 auto;
     font-size: 5px;
 }
@@ -141,12 +147,10 @@ li.nostyle {
 
 div.aboutme {
     text-align: center;
-    height: 300px;
-    margin-left: 200px;
-    margin-right: 200px;
-    margin-top: 80px;
-    margin-bottom: 100px;
-    font-size: 30px;
+    max-width: 1000px;
+    margin: 80px auto 100px;
+    padding: 0 4%;
+    box-sizing: border-box;
 }
 
 /*div.resume {
@@ -159,7 +163,7 @@ div.aboutme {
 }*/
 div.resume{
     align-items: center;
-    width: 1000px;
+    width: min(1000px, 92%);
     margin: 0 auto;
     font-size: 16px;
 }
@@ -177,6 +181,15 @@ li.resume{
     width: 85%;
     margin: 10px;
     list-style-type: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    line-height: 1.35;
+}
+li.resume img{
+    flex: 0 0 auto;
+    vertical-align: middle;
+    margin-left: 0;
 }
 
 figcaption.figcaption{
@@ -264,11 +277,12 @@ img.logoGMV {
     text-align: justify;
     margin-left: 600px;
 }*/
-div.copyright{
+div.copyright, footer.copyright{
     text-align: center;
     align-items: center;
-    width: 1000px;
+    width: min(1000px, 92%);
     margin: 0 auto;
+    padding: 20px 0 30px;
     font-size: 15px;
 }
 /*These are classes for the teaching tools section*/
@@ -289,4 +303,82 @@ p.projects.tools {
 .toollink:hover {
     background-color: rgb(34, 40, 203);
     color: #ffffff;
+}
+
+/* Responsive rules: fluid images and a single-column layout on phones */
+img {
+    max-width: 100%;
+}
+div.publications, div.resume, div.projects, div.copyright, footer.copyright {
+    box-sizing: border-box;
+}
+@media (max-width: 900px) {
+    .divindex {
+        grid-template-columns: 1fr;
+        height: auto;
+        margin-top: 20px;
+        text-align: center;
+        row-gap: 10px;
+    }
+    .divindex .text {
+        padding: 0 6%;
+    }
+    .profile_small {
+        display: block;
+        margin: 20px auto 0;
+        height: 180px;
+    }
+    h1.home, h2.home, h3.home {
+        text-align: center;
+    }
+    div.aboutme {
+        margin: 40px auto 60px;
+    }
+    ol.publications, ol.resume {
+        margin-left: 0;
+        padding-left: 24px;
+    }
+    li.publications, li.resume, li.nostyle {
+        width: auto;
+    }
+    ol.nostyle {
+        margin: 30px 0 50px;
+        padding-left: 0;
+    }
+    img.projects, figure.projects {
+        float: none;
+        display: block;
+        width: 100%;
+        max-width: 325px;
+        height: auto;
+        margin: 0 auto 14px;
+    }
+    p.projects.tools {
+        text-align: center;
+    }
+    p.normal, p.projects {
+        text-align: left;
+    }
+}
+@media (max-width: 600px) {
+    div.heading {
+        font-size: 22px;
+        letter-spacing: 3px;
+    }
+    ul.nav-links a {
+        letter-spacing: 1.5px;
+        font-size: 13px;
+        padding: 10px 10px;
+    }
+    h1.home { font-size: 26px; }
+    h2.home { font-size: 21px; }
+    h3.home { font-size: 17px; }
+    p.normal { font-size: 17px; }
+    h1.publications, h1.resume, h1.projects {
+        margin-top: 40px;
+        font-size: 19px;
+    }
+    img.logoUS { height: 36px; }
+    img.logoGMV { height: 26px; }
+    img.logoCU { height: 22px; }
 }
