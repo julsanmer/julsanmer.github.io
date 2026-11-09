@@ -10,7 +10,8 @@ nav.navbar{
 ul.nav-links{
     display: flex;
     justify-content: space-around;
-    width: 30%;
+    width: 45%;
+    min-width: fit-content;
 } 
 ul.nav-links li{
     list-style: none;
@@ -22,6 +23,7 @@ ul.nav-links a{
     font-weight: bold;
     font-size: 14px;
     padding: 14px 16px;
+    white-space: nowrap;
 } 
 ul.nav-links a:hover:not(.active){
     background-color: lightseagreen;
@@ -268,4 +270,23 @@ div.copyright{
     width: 1000px;
     margin: 0 auto;
     font-size: 15px;
+}
+/*These are classes for the teaching tools section*/
+p.projects.tools {
+    clear: both;
+    text-align: left;
+    margin-bottom: 70px;
+}
+.toollink {
+    display: inline-block;
+    padding: 10px 18px;
+    border: 2px solid rgb(34, 40, 203);
+    border-radius: 8px;
+    color: rgb(34, 40, 203);
+    text-decoration: none;
+    font-weight: bold;
+}
+.toollink:hover {
+    background-color: rgb(34, 40, 203);
+    color: #ffffff;
 }
