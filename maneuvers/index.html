@@ -1314,13 +1314,14 @@ function updatePlane(o) {
   let html = '';
   const dOm = OmF - o.Om, dI = iF - o.i;
   html += rows([['Orbital planes'], [m`i_i \to i_f`, `${deg(o.i*R2D)} → ${deg(iF*R2D)}`], [m`\Omega_i \to \Omega_f`, `${deg(o.Om*R2D)} → ${deg(OmF*R2D)}`], [m`\Delta A`, deg(dA*R2D, 4)]]);
-  const orbI = { p: o.p, e: o.e, w: o.w, i: o.i, Om: o.Om, color: CI, label: 'initial orbit' }, orbF = { p: o.p, e: o.e, w: o.w, i: iF, Om: OmF, color: CF, label: 'final orbit (same a, e, ω)' };
+  const orbI = { p: o.p, e: o.e, w: o.w, i: o.i, Om: o.Om, color: CI, label: 'initial orbit' }, orbF = { p: o.p, e: o.e, w: o.w, i: iF, Om: OmF, color: CF, label: 'final orbit (same a, e, θ; ω measured from the new node)' };
   if (dA < 1e-9) { html += msg(`Same orbital plane: no maneuver needed (${m`\Delta V = 0`}).`, 'ok'); out('pcOut', html); plotTriangle('pcVec', o.V, o.V, 0); plot('pcPlot', 'pcLeg', [orbI, orbF], [], o.R); return; }
   const l = L.map(x => x/sinA);
   const Ni = [Math.cos(o.Om), Math.sin(o.Om), 0], Mi = cross(ni, Ni);
   const u1 = Math.atan2(dot(l, Mi), dot(l, Ni));
   const cands = [{ u: u1, lat: Math.asin(clamp(l[2], -1, 1)) }, { u: u1 + Math.PI, lat: -Math.asin(clamp(l[2], -1, 1)) }];
-  cands.forEach(c => { c.th = c.u - o.w; c.off = !onArc(o, c.th); c.r = c.off ? NaN : rAt(o.p, o.e, c.th); c.V = vis(o.mu, c.r, o.a); c.dV = 2*c.V*Math.sin(dA/2); });
+  const Nf = [Math.cos(OmF), Math.sin(OmF), 0], Mf = cross(nf, Nf), uf1 = Math.atan2(dot(l, Mf), dot(l, Nf));
+  cands.forEach((c, k) => { c.th = c.u - o.w; c.uf = uf1 + k*Math.PI; c.wf = wrapPi(c.uf - c.th); c.off = !onArc(o, c.th); c.r = c.off ? NaN : rAt(o.p, o.e, c.th); c.V = vis(o.mu, c.r, o.a); c.dV = 2*c.V*Math.sin(dA/2); });
   const reach = cands.filter(c => !c.off);
   const best = reach.length ? (reach.length === 2 ? (cands[0].dV <= cands[1].dV ? cands[0] : cands[1]) : reach[0]) : null;
   let chosen = cands[parseInt(pick) - 1] || cands[0]; if (chosen && chosen.off) chosen = best;
@@ -1331,7 +1332,8 @@ function updatePlane(o) {
       [m`\phi\ /\ u\ /\ \theta`, `${f(c.lat*R2D, 3)}° / ${f(wrap360(c.u*R2D), 3)}° / ${f(wrap360(c.th*R2D), 3)}°`]];
     if (c.off) pr.push(['Outside the hyperbolic arc (not on the trajectory)', '—']);
     else {
-      pr.push([m`r\ /\ V`, `${fl(c.r)} ${uL()} / ${fv(c.V)} ${uV()}`], [m`\Delta V\ /\ \psi`, `${kms(c.dV)} / ${deg(90 + dA*R2D/2)}`], mFrow(c.dV));
+      pr.push([m`r\ /\ V`, `${fl(c.r)} ${uL()} / ${fv(c.V)} ${uV()}`], [m`\Delta V\ /\ \psi`, `${kms(c.dV)} / ${deg(90 + dA*R2D/2)}`], mFrow(c.dV),
+        [m`u_f\ /\ \omega_f = u_f - \theta` + ' (in the final plane)', `${deg(wrap360(c.uf*R2D))} / ${deg(wrap360(c.wf*R2D))}`]);
       const thC = coastTarget(o, c.th);
       pr.push([`Coast from ${m`\theta_0`}`, Number.isFinite(thC) ? fmtTime(tofPeri(o.orb, o.mu, thC) - tofPeri(o.orb, o.mu, o.th)) : '— (not reachable)']);
     }
@@ -1342,9 +1344,10 @@ function updatePlane(o) {
   if (chosen && !Number.isFinite(thA)) html += hypMsg(o);
   out('pcOut', html);
   plotTriangle('pcVec', best ? best.V : o.V, best ? best.V : o.V, dA);
+  if (chosen) orbF.w = chosen.wf;
   const track = Number.isFinite(thA) ? animTrack(o.mu, [
     { orb: o.orb, th0: o.th, th1: thA, label: 'coasting on the initial orbit', burnAfter: 'ΔV (plane change)' },
-    finalLegOf({ p: o.p, e: o.e, w: o.w, i: iF, Om: OmF }, thA, 'on the final orbit (new plane)', escClip(o, chosen.r))
+    finalLegOf({ p: o.p, e: o.e, w: chosen.wf, i: iF, Om: OmF }, thA, 'on the final orbit (new plane)', escClip(o, chosen.r))
   ], CS, 'spacecraft') : null;
   plot('pcPlot', 'pcLeg', [orbI, orbF], cands.filter(c => !c.off).map(c => ({ x: c.r*Math.cos(c.u), y: c.r*Math.sin(c.u), color: c === chosen ? C1 : CP, label: `point ${cands.indexOf(c) + 1}` })), o.R, track ? { anim: { tracks: [track] } } : {});
 }
