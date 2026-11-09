@@ -455,7 +455,7 @@ const wrap360 = d => ((d % 360) + 360) % 360;
 const wrap180 = d => { const x = wrap360(d); return x > 180 ? x - 360 : x; };
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const unwrapAfter = (th, from) => th + TWO_PI*Math.ceil((from - th)/TWO_PI - 1e-12); // smallest th + 2πk ≥ from
-const CI = 'var(--c-init)', CF = 'var(--c-final)', C1 = 'var(--c-t1)', C2 = 'var(--c-t2)', CP = 'var(--c-pt)', CS = 'var(--c-sc)', CT = 'var(--c-tg)', CDV = 'var(--c-dv)';
+const CI = 'var(--c-init)', CF = 'var(--c-final)', C1 = 'var(--c-t1)', C2 = 'var(--c-t2)', CP = 'var(--c-pt)', CS = 'var(--c-sc)', CT = 'var(--c-tg)', CDV = 'var(--c-dv)', CX = 'var(--bad-fg)';
 
 /* ---------- math rendering ---------- */
 const m = (s, ...v) => '\\(' + String.raw(s, ...v) + '\\)';
@@ -594,15 +594,21 @@ const ANIM_REAL_DURATION = 12; // seconds of wall-clock time for the whole maneu
 function buildSeg(orb, mu, th0, opt) {
   const pts = [], ts = []; const t0 = tofPeri(orb, mu, th0); const dth = 0.5*D2R;
   const thInf = orb.e >= 1 ? (orb.e > 1 ? Math.acos(-1/orb.e) : Math.PI) - 0.03 : Infinity;
-  const thEnd = Math.min(opt.th1 ?? Infinity, thInf), dur = opt.dur ?? Infinity, rclip = opt.rclip ?? Infinity;
-  let th = th0, thLast = th0;
+  const thEnd = Math.min(opt.th1 ?? Infinity, thInf), dur = opt.dur ?? Infinity, rclip = opt.rclip ?? Infinity, R = opt.R ?? (CUR ? CUR.R : 0);
+  const rOf = x => orb.p/(1 + orb.e*Math.cos(x));
+  let th = th0, thLast = th0, impact = false;
   for (let k = 0; k < 400000; k++) {
-    const thc = Math.min(th, thEnd); const r = orb.p/(1 + orb.e*Math.cos(thc)); const t = tofPeri(orb, mu, thc) - t0;
+    let thc = Math.min(th, thEnd); let r = rOf(thc); 
+    if (k > 0 && r < R && rOf(thLast) >= R) { // crosses the surface: bisect the impact point and stop the leg there
+      let lo = thLast, hi = thc; for (let j = 0; j < 40; j++) { const mid = (lo + hi)/2; if (rOf(mid) >= R) lo = mid; else hi = mid; }
+      thc = lo; r = rOf(thc); impact = true;
+    }
+    const t = tofPeri(orb, mu, thc) - t0;
     pts.push([r*Math.cos(thc + orb.w), r*Math.sin(thc + orb.w)]); ts.push(t); thLast = thc;
-    if (thc >= thEnd || t >= dur || r > rclip) break;
+    if (impact || thc >= thEnd || t >= dur || r > rclip) break;
     th += dth;
   }
-  return { orb, pts, ts, dur: ts[ts.length - 1], th0, thEnd: thLast };
+  return { orb, pts, ts, dur: ts[ts.length - 1], th0, thEnd: thLast, impact };
 }
 // legs: [{orb, th0, th1?|dur?|rclip?, label, burnAfter?}] → track with cumulative times and burn events
 // velocity vector (inertial frame) on an orbit at true anomaly th, in the same frame as the plots
@@ -617,16 +623,22 @@ function toPlane(v, i, Om) { // inverse of rotECI: inertial → plane frame (x, 
 }
 function animTrack(mu, legs, color, label) {
   const base = CUR || { i: 0, Om: 0 }; const segs = [], events = []; let t = 0;
-  legs.forEach((L, k) => {
+  let impact = false;
+  for (let k = 0; k < legs.length && !impact; k++) {
+    const L = legs[k];
     const sg = buildSeg(L.orb, mu, L.th0, L); sg.t0 = t; sg.label = L.label; t += sg.dur; segs.push(sg);
-    if (L.burnAfter && legs[k + 1]) {
+    if (sg.impact) { // the trajectory hits the body: mark the point and stop the track here
+      const pl = sg.pts[sg.pts.length - 1]; const i = L.orb.i ?? base.i, Om = L.orb.Om ?? base.Om;
+      events.push({ t, label: 'impact on the surface', impact: true, pos2: pl, pos3: rotECI(pl[0], pl[1], 0, i, Om) });
+      sg.label += ' → impact'; impact = true;
+    } else if (L.burnAfter && legs[k + 1]) {
       const vb = velECI(L.orb, mu, sg.thEnd), va = velECI(legs[k + 1].orb, mu, legs[k + 1].th0);
       const dv3 = [va[0] - vb[0], va[1] - vb[1], va[2] - vb[2]]; const mag = Math.hypot(...dv3);
       const pl = sg.pts[sg.pts.length - 1]; const i = L.orb.i ?? base.i, Om = L.orb.Om ?? base.Om;
       events.push({ t, label: L.burnAfter, mag, pos2: pl, dv2: toPlane(dv3, i, Om), pos3: rotECI(pl[0], pl[1], 0, i, Om), dv3 });
     }
-  });
-  return { segs, events, color, label, total: t };
+  }
+  return { segs, events, color, label, total: t, impact };
 }
 function segIndex(sg, tl) { const ts = sg.ts; let lo = 0, hi = ts.length - 1; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (ts[mid] <= tl) lo = mid; else hi = mid; } return [lo, hi]; }
 function trackPos(tr, t) {
@@ -647,7 +659,7 @@ function animLoop(ts) {
     const a = ANIM[id]; if (!a.playing) continue; any = true;
     if (a.hold > 0) { a.hold -= dt; render(id); continue; }
     const tNew = a.t + dt*(a.total/ANIM_REAL_DURATION)*a.speed;
-    const ev = a.tracks[0].events.find(e => a.t < e.t && e.t <= tNew);
+    const ev = a.tracks[0].events.find(e => !e.impact && a.t < e.t && e.t <= tNew);
     if (ev) { a.t = ev.t; a.hold = 1.0; } else a.t = tNew;
     if (a.t >= a.total) { a.t = a.total; a.playing = false; }
     render(id); updateAnimUI(id);
@@ -767,7 +779,9 @@ function render2d(id) {
   });
   const a = ANIM[id];
   if (a) a.tracks[0].events.forEach(e => {
-    if (a.t < e.t - 1e-9 || !(e.mag > 0)) return;
+    if (a.t < e.t - 1e-9) return;
+    if (e.impact) { const h = ext*0.022, [x, y] = e.pos2; s += `<g stroke="${CX}" stroke-width="3" stroke-linecap="round" vector-effect="non-scaling-stroke"><line x1="${x - h}" y1="${-y - h}" x2="${x + h}" y2="${-y + h}" vector-effect="non-scaling-stroke"/><line x1="${x - h}" y1="${-y + h}" x2="${x + h}" y2="${-y - h}" vector-effect="non-scaling-stroke"/></g><text x="${x + (x > cx ? -1 : 1)*ext*0.03}" y="${-y + ext*0.05}" font-size="${ext*0.045}" font-weight="600" fill="${CX}" text-anchor="${x > cx ? 'end' : 'start'}">impact</text>`; return; }
+    if (!(e.mag > 0)) return;
     const alpha = a.t - e.t <= 0.08*a.total ? 1 : 0.4;
     const L = ext*Math.max(0.08, 0.26*e.mag/a.dvMax); const n = Math.hypot(e.dv2[0], e.dv2[1]) || 1;
     s += svgArrow(e.pos2[0], e.pos2[1], e.pos2[0] + e.dv2[0]/n*L, e.pos2[1] + e.dv2[1]/n*L, CDV, e.label, ext, alpha);
@@ -842,7 +856,11 @@ function render3d(id) {
     ctx.restore();
   });
   if (a) a.tracks[0].events.forEach(e => {
-    if (a.t < e.t - 1e-9 || !(e.mag > 0)) return;
+    if (a.t < e.t - 1e-9) return;
+    if (e.impact) { const q = P(e.pos3), h = 7; ctx.save(); ctx.globalAlpha = hidden(q) ? 0.5 : 1; ctx.strokeStyle = ctx.fillStyle = resolveColor(CX); ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(q[0] - h, q[1] - h); ctx.lineTo(q[0] + h, q[1] + h); ctx.moveTo(q[0] - h, q[1] + h); ctx.lineTo(q[0] + h, q[1] - h); ctx.stroke();
+      ctx.font = '600 12px ' + font; ctx.textAlign = q[0] > W*0.78 ? 'right' : 'left'; ctx.fillText('impact', q[0] + (q[0] > W*0.78 ? -10 : 10), q[1] + 14); ctx.restore(); return; }
+    if (!(e.mag > 0)) return;
     const alpha = a.t - e.t <= 0.08*a.total ? 1 : 0.4;
     const L = Rmax*Math.max(0.08, 0.26*e.mag/a.dvMax); const n = Math.hypot(...e.dv3) || 1;
     const q1 = P(e.pos3), q2 = P([e.pos3[0] + e.dv3[0]/n*L, e.pos3[1] + e.dv3[1]/n*L, e.pos3[2] + e.dv3[2]/n*L]);
