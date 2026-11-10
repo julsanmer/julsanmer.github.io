@@ -43,7 +43,70 @@ window.__katexFromCDN = function () {
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.45}
 body{padding:16px}
-.wrap{max-width:1140px;margin:0 auto}
+.wrap{max-width:1560px;margin:0 auto}
+/* layout: inputs in a sticky side panel on wide screens, stacked (and collapsible) otherwise */
+@media (min-width:1280px){
+  .layout{display:grid;grid-template-columns:380px minmax(0,1fr);gap:16px;align-items:start}
+  .side{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;padding-right:2px}
+  .side .two{grid-template-columns:1fr}
+}
+.card > h2.fold{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px}
+.card > h2.fold::after{content:'▾';margin-left:auto;color:var(--muted);font-size:.9em}
+.card.collapsed > h2.fold{margin-bottom:0}
+.card.collapsed > h2.fold::after{content:'▸'}
+.card.collapsed > *:not(h2){display:none}
+.hbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.hbtns select{width:auto;max-width:100%;padding:6px 8px;background:var(--surface);font-size:.9rem}
+@media (max-width:760px){header{flex-direction:column;gap:10px}.hbtns{justify-content:flex-start}}
+/* second-level selector: one maneuver card at a time */
+.subtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.subtabs button{font:inherit;font-size:.86rem;padding:5px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+.subtabs button[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.panel .card.sub{display:none}
+.panel .card.sub.active{display:block}
+/* maneuver cards: the orbit view goes on top, centred and wide; the computed data sits below in collapsible sections */
+.panel .card > .two{grid-template-columns:1fr}
+.panel .card > .two > div:last-child{order:-1}
+@media (min-width:961px){
+  .panel .plotbox canvas.c3d{aspect-ratio:auto;height:clamp(340px,58vh,640px)}
+  .panel .plotbox svg[id$="Plot"]{width:min(100%, clamp(340px,58vh,640px));margin-inline:auto}
+}
+.panel .card > .two > div:first-child .plotbox{max-width:560px}
+.panel div[id*="Out"]{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:8px 18px;align-items:start}
+.panel div[id*="Out"]:empty{display:none}
+.panel div[id*="Out"] > .msg,.panel div[id*="Out"] > table.cmp{grid-column:1/-1;margin:0}
+.panel div[id*="Out"] > table.res{margin-top:0}
+details.sec{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+details.sec > summary{cursor:pointer;background:var(--surface-2);padding:6px 10px;font-weight:600;font-size:.88rem;color:var(--muted)}
+details.sec[open] > summary{color:var(--text)}
+details.sec > table.res{margin-top:0}
+.side div[id$="Out"] > details.sec{margin-top:8px}
+.side div[id$="Out"] > .msg{margin-bottom:0}
+details.sec > table.res tr:last-child td{border-bottom:0}
+.subtabs .alldata{margin-left:auto;background:var(--surface);color:var(--muted);font-size:.8rem}
+input.invalid{border-color:var(--bad-fg);background:var(--bad-bg)}
+/* presentation mode: the orbit view, its animation bar and legend fill the screen (classroom projector) */
+.ptools .ponly{display:none}
+.present{position:fixed !important;inset:0;z-index:100;background:var(--bg);padding:12px 18px;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:auto;max-width:none !important;margin:0}
+.present > .plotbox{max-width:none !important;width:100%;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;margin:0}
+.present .plotbox svg[id$="Plot"]{width:min(100%, calc(100vh - 225px));height:auto}
+.present .plotbox canvas.c3d{width:100%;height:calc(100vh - 225px);min-height:240px;aspect-ratio:auto}
+.present .plotbox svg[id$="Plot"] path,.present .plotbox svg[id$="Plot"] line{stroke-width:3px}
+.present .ptools{width:100%;font-size:1rem;gap:8px}
+.present .ptools button,.present .anim button{font-size:1rem;padding:5px 14px}
+.present .ptools .ponly{display:inline-block}
+.present .anim{width:100%;font-size:1.05rem;gap:10px}
+.present .anim select{font-size:1rem;padding:4px 8px}
+.present .anim .readout{font-size:1.3rem;text-align:center}
+.present .legend{font-size:1.1rem;justify-content:center;gap:6px 22px}
+.present > p.note{display:none}
+.pov{display:none}
+.present .pov{display:block;position:absolute;top:66px;right:28px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:1.1rem;max-width:36vw;box-shadow:0 4px 18px rgba(0,0,0,.12);z-index:2}
+.present.nopov .pov{display:none}
+.pov table{border-collapse:collapse}
+.pov td{padding:3px 8px;vertical-align:top}
+.pov td:last-child{text-align:right;font-family:var(--mono);white-space:nowrap}
+.tabs button:focus-visible,.subtabs button:focus-visible,.iconbtn:focus-visible,.smallbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:8px 0 18px}
 header h1{margin:0;font-size:1.6rem;letter-spacing:-.01em}
 header p{margin:4px 0 0;color:var(--muted);max-width:70ch}
@@ -104,11 +167,16 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
 .ptools .p3d{display:none}
 .ptools.is3d .p3d{display:inline-flex;gap:4px;align-items:center}
 .ptools .hint{margin-left:auto}
+.ptools .hint ~ button[data-p="toggle"]{margin-left:4px}
 .plotbox canvas.c3d{width:100%;aspect-ratio:1/1;display:block;touch-action:none;cursor:grab;border-radius:6px}
 .anim{display:none;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:.78rem;color:var(--muted)}
 .anim.on{display:flex}
 .anim button.play{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;min-width:64px}
 .anim input[type=range]{flex:1;min-width:90px;accent-color:var(--accent)}
+.anim .scrub{flex:1;min-width:90px;position:relative;display:flex;padding-bottom:7px}
+.anim .scrub input[type=range]{width:100%;margin:0}
+.anim .ticks{position:absolute;left:8px;right:8px;bottom:0;height:7px;pointer-events:none}
+.anim .ticks i{position:absolute;top:0;width:2px;height:7px;border-radius:1px;background:var(--c-dv);transform:translateX(-1px)}
 .anim select{width:auto;padding:2px 6px;font-size:.78rem}
 .anim .readout{width:100%;font-size:.8rem;color:var(--text);line-height:1.4}
 .anim .readout .ev{color:var(--muted);margin-right:10px}
@@ -127,8 +195,22 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
     <h1>Orbital Maneuvers Calculator</h1>
     <p>Interactive visualization of Impulsive Maneuvers. Define the central body, the initial orbit and explore different types of maneuvers and orbital transfers. The result is shown as an interactive 3D view.</p>
   </div>
-  <button class="iconbtn" id="themeBtn" title="Toggle light/dark">◐ Theme</button>
+  <div class="hbtns">
+    <select id="preset" data-a="preset" title="Load a worked example" aria-label="Load a worked example">
+      <option value="">Examples…</option>
+      <option value="leo-geo">LEO → GEO (Hohmann)</option>
+      <option value="leo-geo-inc">LEO → GEO with inclination change</option>
+      <option value="iss-plane">Plane change 28.5° → 51.6°</option>
+      <option value="rendezvous">LEO rendezvous (phasing)</option>
+      <option value="earth-mars">Earth → Mars (heliocentric Hohmann)</option>
+      <option value="lunar-capture">Lunar capture from a hyperbola</option>
+    </select>
+    <button class="iconbtn" id="shareBtn" title="Copy a link that reproduces this case">🔗 Copy link</button>
+    <button class="iconbtn" id="themeBtn" title="Toggle light/dark">◐ Theme</button>
+  </div>
 </header>
+<div class="layout">
+<aside class="side" aria-label="Central body and spacecraft inputs">
 
 <!-- ============ 1. CENTRAL BODY ============ -->
 <section class="card" id="bodyCard">
@@ -175,7 +257,9 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
   <div id="scOut"></div>
 </section>
 
-<!-- ============ 2. MANEUVER TABS ============ -->
+</aside>
+<main class="main">
+<!-- ============ 3. MANEUVER TABS ============ -->
 <section class="card">
   <h2>3 · Maneuver</h2>
   <div class="tabs" role="tablist">
@@ -256,7 +340,7 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
       <p class="lead">The goal is to rotate the line of apsides by \(\Delta\omega\) keeping the orbit shape \((a, e)\). Accordingly \(V_i = V_f\). This maneuver can be done at two specific points in the orbit.</p>
       <div class="grid">
         <label><span class="lbl">\(\Delta\omega\) (°)</span><input id="rot_dw" type="number" step="any" value="60"></label>
-        <label><span class="lbl">Animate solution</span><select id="rot_sol"><option value="1">solution 1 (θᵢ = Δω/2)</option><option value="2">solution 2 (θᵢ = 180° + Δω/2)</option></select></label>
+        <label><span class="lbl">Animate option</span><select id="rot_sol"><option value="1">option 1 (θᵢ = Δω/2)</option><option value="2">option 2 (θᵢ = 180° + Δω/2)</option></select></label>
       </div>
       <div class="two">
         <div id="rotOut"></div>
@@ -413,7 +497,8 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
     </div>
   </div>
 </section>
-
+</main>
+</div>
 <footer>Formulas follow Lesson 4 “Orbital Maneuvers” (R. Vázquez Valenzuela, J. C. Sánchez Merino, Universidad de Sevilla). Impulsive (instantaneous \(\Delta V\)) model, two-body dynamics; animations integrate Kepler's equation along each conic. Math rendered with KaTeX.</footer>
 </div>
 
@@ -480,7 +565,29 @@ function typeset(el) {
     el.innerHTML = el.innerHTML.replace(/\\\[([\s\S]+?)\\\]/g, (_, s) => '<div class="mfb" style="margin:.4em 0">' + plainMath(s).slice(18, -7) + '</div>').replace(/\\\(([\s\S]+?)\\\)/g, (_, s) => plainMath(s));
   }
 }
-const out = (id, html) => { const el = $(id); el.innerHTML = html; typeset(el); };
+// in the maneuver cards every titled block of a result table becomes a collapsible section; open/closed state is remembered
+const SEC_OPEN = (() => { try { return JSON.parse(localStorage.getItem('om-sec') || '{}') || {}; } catch (e) { return {}; } })();
+function foldSections(el) {
+  if (!el.closest('.panel, .side')) return; let idx = 0;
+  [...el.querySelectorAll(':scope > table.res')].forEach(tb => {
+    const trs = [...tb.rows]; if (!trs.some(r => r.querySelector('th.sub'))) return;
+    const nx = tb.nextElementSibling;
+    if (trs.length === 1 && nx && nx.classList.contains('res2')) { // title + two-column block (side panel)
+      const d = document.createElement('details'), sm = document.createElement('summary'), key = el.id + '#' + idx; d.className = 'sec'; d.dataset.k = key; d.open = key in SEC_OPEN ? !!SEC_OPEN[key] : idx === 0; idx++; sm.innerHTML = trs[0].querySelector('th.sub').innerHTML; tb.replaceWith(d); d.append(sm, nx); return;
+    }
+    const frag = document.createDocumentFragment(); let cur = null, plain = null;
+    const newTable = () => { const t = document.createElement('table'); t.className = 'res'; t.appendChild(document.createElement('tbody')); return t; };
+    trs.forEach(r => {
+      const th = r.querySelector('th.sub');
+      if (th) { const d = document.createElement('details'), sm = document.createElement('summary'), t = newTable(), key = el.id + '#' + idx; d.className = 'sec'; d.dataset.k = key; d.open = key in SEC_OPEN ? !!SEC_OPEN[key] : idx === 0; idx++; sm.innerHTML = th.innerHTML; d.append(sm, t); frag.appendChild(d); cur = t.tBodies[0]; }
+      else if (cur) cur.appendChild(r);
+      else { if (!plain) { plain = newTable(); frag.appendChild(plain); } plain.tBodies[0].appendChild(r); }
+    });
+    tb.replaceWith(frag);
+  });
+}
+document.addEventListener('toggle', ev => { const d = ev.target; if (!d.classList || !d.classList.contains('sec') || !d.dataset.k) return; SEC_OPEN[d.dataset.k] = d.open ? 1 : 0; try { localStorage.setItem('om-sec', JSON.stringify(SEC_OPEN)); } catch (e) {} }, true);
+const out = (id, html) => { const el = $(id); el.innerHTML = html; foldSections(el); typeset(el); };
 
 /* ---------- formatting ---------- */
 function f(x, d = 3) {
@@ -681,8 +788,10 @@ function updateAnimUI(id) {
   bar.querySelector('input[type=range]').value = Math.round(1000*a.t/a.total);
   bar.querySelector('select').value = String(a.speed);
   const tr = a.tracks[0]; const pos = trackPos(tr, a.t);
+  const tk = bar.querySelector('.ticks'); if (tk && tk._a !== a) { tk._a = a; tk.innerHTML = tr.events.map(e => `<i style="left:${(100*e.t/a.total).toFixed(2)}%" title="${e.label}"></i>`).join(''); }
+  const dvUsed = tr.events.filter(e => a.t >= e.t - 1e-9).reduce((sm, e) => sm + (e.mag || 0), 0), dvAll = tr.events.reduce((sm, e) => sm + (e.mag || 0), 0);
   const ev = tr.events.map(e => `<span class="ev${a.t >= e.t - 1e-9 ? ' done' : ''}">${e.label} ${a.t >= e.t - 1e-9 ? '✓' : '·'} ${fmtTime(e.t, true)}</span>`).join('');
-  bar.querySelector('.readout').innerHTML = `<b>${pos.seg.label}</b> &nbsp;·&nbsp; t = ${fmtTime(a.t, true)} <span class="dim">of ${fmtTime(a.total, true)}</span><br>${ev}`;
+  bar.querySelector('.readout').innerHTML = `<b>${pos.seg.label}</b> &nbsp;·&nbsp; t = ${fmtTime(a.t, true)} <span class="dim">of ${fmtTime(a.total, true)}</span>${dvAll > 0 ? ` &nbsp;·&nbsp; ΔV used ${kms(dvUsed)} <span class="dim">of ${kms(dvAll)}</span>` : ''}<br>${ev}`;
 }
 
 /* ---------- phase-angle chart (phasing cards): angle target − interceptor vs time ---------- */
@@ -708,6 +817,8 @@ function plotPhase(svgId, samples, tNow) {
   if (Number.isFinite(tNow)) { const i = Math.min(samples.length - 1, Math.round(tNow/tmax*(samples.length - 1))); const p = samples[i]; g += `<line x1="${X(p.t)}" y1="${mt}" x2="${X(p.t)}" y2="${H - mb}" stroke="${CDV}" stroke-width="1" vector-effect="non-scaling-stroke"/><circle cx="${X(p.t)}" cy="${Y(p.ang)}" r="0.12" fill="${CS}" stroke="var(--surface)" stroke-width="1.5" vector-effect="non-scaling-stroke"/><text x="${X(p.t) + 0.15}" y="${mt + fs}" font-size="${fs}" fill="var(--text)">${f(p.ang, 1)}°</text>`; }
   svg.innerHTML = g;
 }
+// canvas text with a background-coloured halo so labels stay readable over orbits and the body
+function haloText(ctx, halo, txt, x, y) { ctx.save(); ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.strokeStyle = halo; ctx.globalAlpha *= 0.8; ctx.strokeText(txt, x, y); ctx.restore(); ctx.fillText(txt, x, y); }
 /* ---------- plotting: registry, 2D (SVG) and 3D (canvas) renderers ---------- */
 const PLOTS = {}, PMODE = {}, PVIEW = {};
 let CUR = null; // current global orbit (default plane for plots)
@@ -799,14 +910,17 @@ function render2d(id) {
 function render3d(id) {
   const d = PLOTS[id], svg = $(id); if (!d || !svg) return;
   const cv = svg.parentElement.querySelector('canvas.c3d'); if (!cv) return;
-  const W = cv.clientWidth; if (!(W > 0)) return; const H = W, dpr = window.devicePixelRatio || 1;
+  const Wc = cv.clientWidth; if (!(Wc > 0)) return;
+  const pres = !!cv.closest('.present'), Hc = cv.clientHeight || Wc; // the canvas is wide on large screens and fills the screen in presentation mode
+  const kP = pres ? clamp(Math.min(Wc, Hc)/480, 1, 2.4) : 1; // …and is drawn on a smaller logical canvas, magnified, so line widths, markers and labels grow with it
+  const W = Wc/kP, H = Hc/kP, dpr = (window.devicePixelRatio || 1)*kP;
   if (cv.width !== Math.round(W*dpr) || cv.height !== Math.round(H*dpr)) { cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); }
   const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
   const v = PVIEW[id] || (PVIEW[id] = DEFVIEW()); const base = CUR || { i: 0, Om: 0 };
   const muted = cssVar('--muted'), surface = cssVar('--surface'), font = cssVar('--font');
   const Rmax = plotExtent(d), rclip = Rmax*2.2;
   const ca = Math.cos(v.az), sa = Math.sin(v.az), ct = Math.cos(v.tilt), st = Math.sin(v.tilt);
-  const sc = (W/2 - 16)/(Rmax*(Math.abs(ca) + Math.abs(sa)))*v.zoom, cx = W/2, cy = H/2; // fit the projected reference square (half-side Rmax) in the canvas
+  const sc = (Math.min(W, H)/2 - 16)/(Rmax*(Math.abs(ca) + Math.abs(sa)))*v.zoom*(W >= 1.4*H ? 1.3 : 1), cx = W/2, cy = H/2; // fit the projected reference square (half-side Rmax) in the canvas
   const P = ([x, y, z]) => { const x1 = x*ca - y*sa, y1 = x*sa + y*ca; const y2 = y1*ct + z*st, z2 = -y1*st + z*ct; return [cx + x1*sc, cy - y2*sc, z2, Math.hypot(x1, y2)]; };
   const hidden = q => q[2] < 0 && q[3] < d.R;
   const lines = d.orbits.map(o => { const i = o.i ?? base.i, Om = o.Om ?? base.Om; return { o, q: sampleOrbit(o, rclip, 240).map(([x, y]) => P(rotECI(x, y, 0, i, Om))) }; });
@@ -852,14 +966,14 @@ function render3d(id) {
     const q = P(rotECI(p.x, p.y, 0, p.i ?? base.i, p.Om ?? base.Om)); const h = hidden(q);
     ctx.save(); ctx.globalAlpha = h ? 0.35 : 1; ctx.fillStyle = resolveColor(p.color); ctx.strokeStyle = surface; ctx.lineWidth = 1.5;
     const t = 6; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(q[0], q[1] - t); ctx.lineTo(q[0] - 0.87*t, q[1] + 0.5*t); ctx.lineTo(q[0] + 0.87*t, q[1] + 0.5*t); ctx.closePath(); ctx.fill(); ctx.stroke();
-    if (p.label) { const left = q[0] > W*0.78; ctx.textAlign = left ? 'right' : 'left'; ctx.fillText(p.label, q[0] + (left ? -7 : 7), q[1] - 7); }
+    if (p.label) { const left = q[0] > W*0.78; ctx.textAlign = left ? 'right' : 'left'; haloText(ctx, surface, p.label, q[0] + (left ? -7 : 7), q[1] - 7); }
     ctx.restore();
   });
   if (a) a.tracks[0].events.forEach(e => {
     if (a.t < e.t - 1e-9) return;
     if (e.impact) { const q = P(e.pos3), h = 7; ctx.save(); ctx.globalAlpha = hidden(q) ? 0.5 : 1; ctx.strokeStyle = ctx.fillStyle = resolveColor(CX); ctx.lineWidth = 3; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(q[0] - h, q[1] - h); ctx.lineTo(q[0] + h, q[1] + h); ctx.moveTo(q[0] - h, q[1] + h); ctx.lineTo(q[0] + h, q[1] - h); ctx.stroke();
-      ctx.font = '600 12px ' + font; ctx.textAlign = q[0] > W*0.78 ? 'right' : 'left'; ctx.fillText('impact', q[0] + (q[0] > W*0.78 ? -10 : 10), q[1] + 14); ctx.restore(); return; }
+      ctx.font = '600 12px ' + font; ctx.textAlign = q[0] > W*0.78 ? 'right' : 'left'; haloText(ctx, surface, 'impact', q[0] + (q[0] > W*0.78 ? -10 : 10), q[1] + 14); ctx.restore(); return; }
     if (!(e.mag > 0)) return;
     const alpha = a.t - e.t <= 0.08*a.total ? 1 : 0.4;
     const L = Rmax*Math.max(0.08, 0.26*e.mag/a.dvMax); const n = Math.hypot(...e.dv3) || 1;
@@ -868,7 +982,7 @@ function render3d(id) {
     ctx.save(); ctx.globalAlpha = alpha*(hidden(q1) ? 0.5 : 1); ctx.strokeStyle = ctx.fillStyle = resolveColor(CDV); ctx.lineWidth = 3; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(q1[0], q1[1]); ctx.lineTo(q2[0] - ux*hl, q2[1] - uy*hl); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(q2[0], q2[1]); ctx.lineTo(q2[0] - ux*hl - uy*hl*0.5, q2[1] - uy*hl + ux*hl*0.5); ctx.lineTo(q2[0] - ux*hl + uy*hl*0.5, q2[1] - uy*hl - ux*hl*0.5); ctx.closePath(); ctx.fill();
-    ctx.font = '600 12px ' + font; ctx.textAlign = ux < -0.3 ? 'right' : (ux > 0.3 ? 'left' : 'center'); ctx.fillText(e.label, q2[0] + ux*8, q2[1] + uy*8 + 4); ctx.restore();
+    ctx.font = '600 12px ' + font; ctx.textAlign = ux < -0.3 ? 'right' : (ux > 0.3 ? 'left' : 'center'); haloText(ctx, surface, e.label, q2[0] + ux*8, q2[1] + uy*8 + 4); ctx.restore();
   });
   if (a) a.tracks.forEach((tr, k) => {
     const pos = trackPos(tr, a.t); const q = P(rotECI(pos.x, pos.y, 0, pos.i ?? base.i, pos.Om ?? base.Om)); const h = hidden(q);
@@ -881,15 +995,18 @@ function setupPlotboxes() {
   document.querySelectorAll('svg[id$="Plot"]').forEach(svg => {
     const id = svg.id, box = svg.parentElement;
     const tools = document.createElement('div'); tools.className = 'ptools';
-    tools.innerHTML = `<button data-v="3d" title="Interactive 3D view">3D</button><button data-v="2d" title="Orbital-plane view">2D plane</button><span class="p3d"><button data-act="top" title="View from the north pole">Top</button><button data-act="edge" title="Edge-on equatorial view">Edge</button><button data-act="reset" title="Default view">Reset</button></span><span class="hint p3d">drag to rotate · wheel to zoom</span>`;
+    tools.innerHTML = `<button data-v="3d" title="Interactive 3D view">3D</button><button data-v="2d" title="Orbital-plane view">2D plane</button><span class="p3d"><button data-act="top" title="View from the north pole">Top</button><button data-act="edge" title="Edge-on equatorial view">Edge</button><button data-act="reset" title="Default view">Reset</button></span><span class="hint p3d">drag to rotate · wheel to zoom</span><button data-p="pov" class="ponly" title="Show or hide the key numbers">Numbers</button><button data-p="toggle" title="Fill the screen with this view (Esc to leave)">⛶ Present</button>`;
     const cv = document.createElement('canvas'); cv.className = 'c3d'; cv.style.display = 'none';
     const bar = document.createElement('div'); bar.className = 'anim';
     bar.innerHTML = `<button class="play" data-a="play">▶ Play</button><button data-a="reset" title="Back to the start">⟲</button><input type="range" min="0" max="1000" value="0" data-a="scrub" title="Scrub through the maneuver"><select data-a="speed" title="Playback speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select><div class="readout"></div>`;
+    { const rg = bar.querySelector('input[type=range]'), sc = document.createElement('span'), tk = document.createElement('span'); sc.className = 'scrub'; tk.className = 'ticks'; rg.replaceWith(sc); sc.appendChild(rg); sc.appendChild(tk); rg.setAttribute('aria-label', 'Maneuver time'); } // burn marks under the time slider
+    cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', '3D view of the orbits and the maneuver');
     box.prepend(tools); box.appendChild(cv); box.appendChild(bar);
     PVIEW[id] = DEFVIEW();
     try { PMODE[id] = localStorage.getItem('om-view2-' + id) || null; } catch (e) { PMODE[id] = null; }
     tools.addEventListener('click', ev => {
       const b = ev.target.closest('button'); if (!b) return;
+      if (b.dataset.p) { const col = box.parentElement; if (b.dataset.p === 'pov') col.classList.toggle('nopov'); else setPresent(col, id, !col.classList.contains('present')); return; }
       if (b.dataset.v) { PMODE[id] = b.dataset.v; try { localStorage.setItem('om-view2-' + id, b.dataset.v); } catch (e) {} render(id); return; }
       const vw = PVIEW[id];
       if (b.dataset.act === 'top') { vw.az = 0; vw.tilt = 0; } else if (b.dataset.act === 'edge') { vw.az = 0; vw.tilt = Math.PI/2; } else Object.assign(vw, DEFVIEW());
@@ -913,8 +1030,30 @@ function setupPlotboxes() {
     new ResizeObserver(() => { if (PLOTS[id] && plotMode(id) === '3d' && cv.clientWidth > 0) render3d(id); }).observe(cv);
   });
 }
-function renderVisiblePlots() { Object.keys(PLOTS).forEach(id => { const el = $(id); if (el && el.closest('.panel.active')) render(id); }); }
-function plotTriangle(svgId, Vi, Vf, phi, gam) { // gam: flight-path angle of V_i, to draw the local basis e_r (radial), e_θ (tangential)
+// key numbers of the card (ΔV, times, propellant) shown over the view in presentation mode
+function buildOverlay(col) {
+  const card = col.closest('.card'); if (!card) return; let pov = col.querySelector(':scope > .pov');
+  if (!pov) { pov = document.createElement('div'); pov.className = 'pov'; col.appendChild(pov); }
+  const want = /ΔV|\\Delta V|Total time|Rendezvous|T_H|T_B|T_\{ph\}|T_f|m_F/;
+  const trs = [...card.querySelectorAll('div[id*="Out"] table.res tr')].filter(tr => tr.cells.length === 2 && want.test(tr.cells[0].textContent)).slice(0, 7);
+  pov.innerHTML = trs.length ? '<table>' + trs.map(tr => `<tr><td>${tr.cells[0].innerHTML}</td><td>${tr.cells[1].innerHTML}</td></tr>`).join('') + '</table>' : '';
+  pov.style.display = trs.length ? '' : 'none';
+}
+function setPresent(col, id, on) {
+  const btn = col.querySelector('.ptools button[data-p="toggle"]');
+  if (on) {
+    col.classList.add('present'); buildOverlay(col); if (btn) btn.textContent = '✕ Exit';
+    if (col.requestFullscreen) col.requestFullscreen().then(() => { col._fs = true; }, () => {}); // falls back to a fixed full-window layer if fullscreen is refused
+  } else {
+    col.classList.remove('present'); if (btn) btn.textContent = '⛶ Present';
+    if (document.fullscreenElement === col && document.exitFullscreen) document.exitFullscreen(); col._fs = false;
+  }
+  render(id); setTimeout(() => render(id), 80); setTimeout(() => render(id), 300);
+}
+document.addEventListener('fullscreenchange', () => { document.querySelectorAll('.present').forEach(col => { if (col._fs && document.fullscreenElement !== col) { const sv = col.querySelector('svg[id$="Plot"]'); setPresent(col, sv ? sv.id : '', false); } }); renderVisiblePlots(); });
+document.addEventListener('keydown', ev => { if (ev.key !== 'Escape' || document.fullscreenElement) return; document.querySelectorAll('.present').forEach(col => { const sv = col.querySelector('svg[id$="Plot"]'); setPresent(col, sv ? sv.id : '', false); }); });
+function renderVisiblePlots() { Object.keys(PLOTS).forEach(id => { const el = $(id); if (el && el.parentElement.offsetParent !== null) render(id); }); }
+function plotTriangle(svgId, Vi, Vf, phi, gam, angLabel = 'φ') { // gam: flight-path angle of V_i, to draw the local basis e_r (radial), e_θ (tangential)
   const svg = $(svgId); if (!svg) return;
   if (![Vi, Vf, phi].every(Number.isFinite)) { svg.innerHTML = ''; return; }
   const ax = 0, ay = 0, bx = Vi, by = 0, cx = Vf*Math.cos(phi), cy = Vf*Math.sin(phi);
@@ -947,7 +1086,10 @@ function plotTriangle(svgId, Vi, Vf, phi, gam) { // gam: flight-path angle of V_
   for (let gx = Math.ceil(x0/step)*step; gx <= x0 + vbW; gx += step) grid += `<line x1="${gx}" y1="${y0}" x2="${gx}" y2="${y0 + vbH}" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
   for (let gy = Math.ceil(y0/step)*step; gy <= y0 + vbH; gy += step) grid += `<line x1="${x0}" y1="${gy}" x2="${x0 + vbW}" y2="${gy}" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
   grid += `<text x="${x0 + vbW - fs*0.3}" y="${y0 + vbH - fs*0.4}" font-size="${fs*0.8}" fill="var(--muted)" text-anchor="end">grid: ${f(stepD, 3)} ${uV()}</text>`;
-  svg.innerHTML = grid + (basis ? axisArrow(basis.rx, basis.ry, 'e𝑟') + axisArrow(basis.tx, basis.ty, 'eθ') : '') + arrow(ax, ay, bx, by, CI, 'Vᵢ') + arrow(ax, ay, cx, cy, CF, 'V𝑓') + arrow(bx, by, cx, cy, C1, 'ΔV');
+  let arc = ''; // arc marking the angle between V_i and V_f
+  if (Math.abs(phi) > 3*D2R) { const Ra = 0.3*Math.min(Vi, Vf); let dd = ''; for (let k = 0; k <= 24; k++) { const t = phi*k/24; dd += (k ? 'L' : 'M') + (Ra*Math.cos(t)) + ' ' + (-Ra*Math.sin(t)) + ' '; }
+    arc = `<path d="${dd}" fill="none" stroke="var(--text)" stroke-width="1" vector-effect="non-scaling-stroke"/><text x="${1.3*Ra*Math.cos(phi/2)}" y="${-1.3*Ra*Math.sin(phi/2)}" font-size="${fs*0.9}" fill="var(--text)" text-anchor="middle" dominant-baseline="middle" font-style="italic">${angLabel}</text>`; }
+  svg.innerHTML = grid + (basis ? axisArrow(basis.rx, basis.ry, 'e𝑟') + axisArrow(basis.tx, basis.ty, 'eθ') : '') + arc + arrow(ax, ay, bx, by, CI, 'Vᵢ') + arrow(ax, ay, cx, cy, CF, 'V𝑓') + arrow(bx, by, cx, cy, C1, 'ΔV');
 }
 
 /* ---------- global orbit ---------- */
@@ -1361,7 +1503,7 @@ function updatePlane(o) {
   else if (o.hyp && reach.length === 1) html += msg(`Only point ${cands.indexOf(best) + 1} lies on the hyperbolic arc; the antipodal point is beyond the asymptote.`, 'warn');
   if (chosen && !Number.isFinite(thA)) html += hypMsg(o);
   out('pcOut', html);
-  plotTriangle('pcVec', best ? best.V : o.V, best ? best.V : o.V, dA);
+  plotTriangle('pcVec', best ? best.V : o.V, best ? best.V : o.V, dA, NaN, 'ΔA');
   if (chosen) orbF.w = chosen.wf;
   const track = Number.isFinite(thA) ? animTrack(o.mu, [
     { orb: o.orb, th0: o.th, th1: thA, label: 'coasting on the initial orbit', burnAfter: 'ΔV (plane change)' },
@@ -1447,7 +1589,7 @@ function updateHohPlane(o) {
     html += rows([['Timeline'], [`Coast from ${m`\theta_0`} to the descending node (${m`\theta_i = ${f(wrap360((Math.PI - o.w)*R2D), 1)}^\circ`})`, fmtTime(tC)], [`${m`\Delta V_1`} at`, fmtTime(tC)], [`${m`\Delta V_2`} at`, fmtTime(tC + TH)]]); }
   html += `<table class="cmp"><tr><th>Strategy</th><th>${m`\Delta i_1`}</th><th>${m`\Delta i_2`}</th><th>${m`\Delta V_1`}</th><th>${m`\Delta V_2`}</th><th>${m`\Delta V_T`}</th></tr>` + strategies.map(s => `<tr${s === best ? ' class="best"' : ''}><td>${s.name}</td><td>${f(s.al*di*R2D, 3)}°</td><td>${f((1 - s.al)*di*R2D, 3)}°</td><td>${fv(s.d1)}</td><td>${fv(s.d2)}</td><td>${fv(s.T)} ${uV()}</td></tr>`).join('') + '</table>';
   out('hpOut', html);
-  plotTriangle('hpVec1', Vc1, Vt1, alphaC*di); plotTriangle('hpVec2', Vt2, Vc2, (1 - alphaC)*di);
+  plotTriangle('hpVec1', Vc1, Vt1, alphaC*di, NaN, 'Δi₁'); plotTriangle('hpVec2', Vt2, Vc2, (1 - alphaC)*di, NaN, 'Δi₂');
   $('hp_opt').onclick = () => { $('hp_alpha').value = +alOpt.toFixed(4); update(); };
   const eH = Math.abs(rf - ri)/(rf + ri), pH = aH*(1 - eH*eH), iF = o.i + di, up = rf >= ri;
   const circI = { p: ri, e: 0, w: o.w, i: o.i, Om: o.Om }, circF = { p: rf, e: 0, w: o.w, i: iF, Om: o.Om };
@@ -1478,8 +1620,8 @@ function updateRotation(o) {
     const t = triBwd(s.V, s.V, s.phi); s.dV = t.dV; s.psi = t.psi; return s;
   });
   html += rows([['Rotation of line of apsides'], [m`\omega_i \to \omega_f`, `${deg(o.w*R2D)} → ${deg(wrap360((o.w + dw)*R2D))}`]]);
-  sols.forEach((s, k) => html += s.off ? rows([[`Solution ${k + 1} — outside the hyperbolic arc`], [m`\theta_i\ /\ \theta_f`, `${deg(wrap180(s.thi*R2D))} / ${deg(wrap180(s.thf*R2D))} (need ${m`\lvert\theta\rvert < \theta_\infty = ${f(o.thInf*R2D, 2)}^\circ`})`]]) : rows([
-    [`Solution ${k + 1}`],
+  sols.forEach((s, k) => html += s.off ? rows([[`Option ${k + 1} — outside the hyperbolic arc`], [m`\theta_i\ /\ \theta_f`, `${deg(wrap180(s.thi*R2D))} / ${deg(wrap180(s.thf*R2D))} (need ${m`\lvert\theta\rvert < \theta_\infty = ${f(o.thInf*R2D, 2)}^\circ`})`]]) : rows([
+    [`Option ${k + 1}`],
     [m`\theta_i\ /\ \theta_f`, `${deg(wrap360(s.thi*R2D))} / ${deg(wrap360(s.thf*R2D))}`], [m`r\ /\ V`, `${fl(s.r)} ${uL()} / ${fv(s.V)} ${uV()}`],
     [m`\gamma_i\ /\ \gamma_f`, `${f(s.gi*R2D, 4)}° / ${f(s.gf*R2D, 4)}°`], [m`\Delta V\ /\ \psi`, `${kms(s.dV)} / ${deg(wrap180(s.psi*R2D))}`],
     [`Coast from ${m`\theta_0`} to ${m`\theta_i`}`, Number.isFinite(coastTarget(o, s.thi)) ? fmtTime(tofPeri(o.orb, o.mu, coastTarget(o, s.thi)) - tofPeri(o.orb, o.mu, o.th)) : '— (not reachable from θ₀)'],
@@ -1494,7 +1636,7 @@ function updateRotation(o) {
   plot('rotPlot', 'rotLeg', [
     { p: o.p, e: o.e, w: o.w, color: CI, label: 'initial orbit' },
     { p: o.p, e: o.e, w: o.w + dw, color: CF, label: 'rotated orbit' }
-  ], sols.filter(s => !s.off).map(s => ({ x: s.r*Math.cos(s.thi + o.w), y: s.r*Math.sin(s.thi + o.w), color: s === chosen ? C1 : CP, label: 'sol. ' + (sols.indexOf(s) + 1) })), o.R, {
+  ], sols.filter(s => !s.off).map(s => ({ x: s.r*Math.cos(s.thi + o.w), y: s.r*Math.sin(s.thi + o.w), color: s === chosen ? C1 : CP, label: 'option ' + (sols.indexOf(s) + 1) })), o.R, {
     segs: [o.w, o.w + dw].map((w, k) => { const far = o.hyp ? escClip(o, o.rp) : o.ra; return { a: [-far*Math.cos(w), -far*Math.sin(w)], b: [o.rp*Math.cos(w), o.rp*Math.sin(w)], color: k ? CF : CI, dash: true, arrow: true, label: k ? 'rotated line of apsides' : 'initial line of apsides' }; }),
     ...(track ? { anim: { tracks: [track] } } : {}) });
 }
@@ -1606,6 +1748,8 @@ function update() {
   updateOrbitCard(o);
   const steps = o.valid ? [updateTriangle, updateApsides, updateGeneral, updateHohmann, updateBielliptic, updateCoaxial, updatePlane, updateThree, updateHohPlane, updateRotation, updatePhasingCirc, updatePhasingEll] : [];
   steps.forEach(fn => { try { fn(o); } catch (err) { console.error(fn.name, err); } });
+  markInvalid(o); scheduleHash();
+  document.querySelectorAll('.present').forEach(buildOverlay);
   if (!o.valid) ['triOut','triOut2','apsOut','genOut','hohOut','bieOut','coxOut','pcOut','t3Out','hpOut','rotOut','phcOut','pheOut'].forEach(id => out(id, msg('Define a valid orbit first.', 'warn')));
 }
 
@@ -1647,6 +1791,102 @@ function updateUnitsCard() {
     [m`1\ \mathrm{UV} = \sqrt{\mu/\mathrm{UD}}`, `${f(U.UV, 5)} km/s`],
     [m`1\ \mathrm{UT} = \mathrm{UD}/\mathrm{UV}`, `${f(U.UT, 2)} s <span class="dim">(${UTd >= 1 ? f(UTd, 4) + ' days' : f(U.UT/60, 3) + ' min'}; a circular orbit of radius 1 UD has period ${m`2\pi`} UT)</span>`]]));
 }
+/* ---------- tabs and the per-tab card selector ---------- */
+const SUBNAMES = { single: ['Velocity triangle', 'General change', 'Apsides change', 'Line of apsides'], transfer: ['Hohmann', 'Bi-elliptic', 'Coaxial'], plane: ['Out-of-plane impulse', 'Three-impulse', 'Hohmann + inclination'], phasing: ['Circular', 'Elliptic'] };
+let curTab = 'single'; const curSub = {};
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+function showSub(tab, idx) {
+  const panel = $('panel-' + tab); if (!panel) return; const cards = [...panel.querySelectorAll(':scope > .card')]; if (!cards.length) return;
+  idx = Math.max(0, Math.min(cards.length - 1, Number.isFinite(+idx) ? Math.round(+idx) : 0)); curSub[tab] = idx;
+  cards.forEach((c, k) => c.classList.toggle('active', k === idx));
+  panel.querySelectorAll('.subtabs button[role=tab]').forEach((b, k) => { b.setAttribute('aria-selected', k === idx ? 'true' : 'false'); b.tabIndex = k === idx ? 0 : -1; });
+  lsSet('om-sub-' + tab, String(idx)); renderVisiblePlots(); scheduleHash();
+}
+function showTab(tab) {
+  if (!$('panel-' + tab)) return; curTab = tab;
+  document.querySelectorAll('.tabs button').forEach(b => { const on = b.dataset.tab === tab; b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1; });
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+  lsSet('om-tab', tab); renderVisiblePlots(); scheduleHash();
+}
+function setupTabs() {
+  // arrow keys move between tabs (and between the cards of a tab)
+  const arrows = (list, pick) => list.addEventListener('keydown', ev => {
+    const bs = [...list.querySelectorAll('button[role=tab]')], i = bs.indexOf(document.activeElement); if (i < 0) return;
+    const j = ev.key === 'ArrowRight' ? (i + 1) % bs.length : ev.key === 'ArrowLeft' ? (i - 1 + bs.length) % bs.length : ev.key === 'Home' ? 0 : ev.key === 'End' ? bs.length - 1 : -1;
+    if (j < 0) return; ev.preventDefault(); pick(bs[j], j); bs[j].focus();
+  });
+  document.querySelectorAll('.panel').forEach(panel => {
+    const tab = panel.id.replace('panel-', ''), cards = [...panel.querySelectorAll(':scope > .card')];
+    panel.setAttribute('role', 'tabpanel'); panel.setAttribute('aria-label', (document.querySelector(`.tabs button[data-tab="${tab}"]`) || {}).textContent || tab);
+    const bar = document.createElement('div'); bar.className = 'subtabs'; bar.setAttribute('role', 'tablist'); bar.setAttribute('aria-label', 'Maneuver');
+    cards.forEach((c, k) => { c.classList.add('sub'); const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.textContent = (SUBNAMES[tab] || [])[k] || ('Case ' + (k + 1)); b.addEventListener('click', () => showSub(tab, k)); bar.appendChild(b); });
+    { const all = document.createElement('button'); all.type = 'button'; all.className = 'alldata'; all.textContent = '▾ Expand / collapse all data'; all.title = 'Open or close every data section of this maneuver';
+      all.addEventListener('click', () => { const ds = [...panel.querySelectorAll('.card.sub.active details.sec')]; const open = ds.some(d => !d.open); ds.forEach(d => { d.open = open; SEC_OPEN[d.dataset.k] = open ? 1 : 0; }); try { localStorage.setItem('om-sec', JSON.stringify(SEC_OPEN)); } catch (e) {} });
+      bar.appendChild(all); }
+    panel.prepend(bar); arrows(bar, (b, k) => showSub(tab, k));
+    showSub(tab, parseInt(lsGet('om-sub-' + tab) || '0', 10));
+  });
+  const tl = document.querySelector('.tabs');
+  tl.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.tab)));
+  arrows(tl, b => showTab(b.dataset.tab));
+  showTab(lsGet('om-tab') || 'single');
+}
+// the two input cards can be folded (useful on narrow screens, where they sit above the maneuver)
+function setupFolds() {
+  ['bodyCard', 'orbitCard'].forEach(id => {
+    const card = $(id), h = card.querySelector(':scope > h2'); h.classList.add('fold'); h.tabIndex = 0; h.setAttribute('role', 'button');
+    const set = c => { card.classList.toggle('collapsed', c); h.setAttribute('aria-expanded', c ? 'false' : 'true'); lsSet('om-fold-' + id, c ? '1' : '0'); };
+    set(lsGet('om-fold-' + id) === '1');
+    h.addEventListener('click', () => set(!card.classList.contains('collapsed')));
+    h.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); set(!card.classList.contains('collapsed')); } });
+  });
+}
+/* ---------- input validation marks ---------- */
+function markInvalid(o) {
+  document.querySelectorAll('.wrap input[type=number]').forEach(el => el.classList.toggle('invalid', !el.disabled && el.offsetParent !== null && !Number.isFinite(parseFloat(el.value))));
+  if (!o.valid) { if (o.onArc) ['o1', 'o2'].forEach(id => $(id).classList.add('invalid')); else $('ta').classList.add('invalid'); }
+}
+/* ---------- page state: shareable link (#id=value&…) and worked examples ---------- */
+const stateEls = () => [...document.querySelectorAll('.wrap input[id], .wrap select[id]')].filter(el => el.dataset.a == null && el.type !== 'radio');
+function getState() {
+  const st = {}; stateEls().forEach(el => { st[el.id] = el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value; });
+  document.querySelectorAll('.wrap input[type=radio]:checked').forEach(r => { st['r.' + r.name] = r.value; });
+  st._tab = curTab; st._sub = String(curSub[curTab] || 0); return st;
+}
+function setState(st) {
+  if (st.body && BODIES[st.body]) $('body').value = st.body;
+  ['mu', 'R', 'units'].forEach(id => { if (st[id] != null) $(id).value = st[id]; });
+  refreshUnits();
+  if (st.defmode && LBL()[st.defmode]) { defMode = st.defmode; $('defmode').value = defMode; out('l_o1', LBL()[defMode][0]); out('l_o2', LBL()[defMode][1]); }
+  for (const k in st) {
+    if (k[0] === '_' || ['body', 'mu', 'R', 'units', 'defmode'].includes(k)) continue;
+    if (k.startsWith('r.')) { const r = [...document.querySelectorAll('.wrap input[type=radio]')].find(x => x.name === k.slice(2) && x.value === String(st[k])); if (r) r.checked = true; continue; }
+    const el = $(k); if (!el || el.dataset.a != null || !/^(INPUT|SELECT)$/.test(el.tagName) || el.type === 'radio') continue;
+    if (el.type === 'checkbox') el.checked = String(st[k]) === '1'; else el.value = st[k];
+  }
+  if (st._tab) showTab(String(st._tab));
+  if (st._sub != null) showSub(curTab, st._sub);
+  update();
+}
+let hashReady = false, hashLive = false, hashTimer = 0; // the address bar is only kept in sync once a link has been loaded or copied
+function writeHash() { if (!hashReady) return; hashLive = true; try { history.replaceState(null, '', '#' + new URLSearchParams(getState()).toString()); } catch (e) {} }
+function scheduleHash() { if (!hashReady || !hashLive) return; clearTimeout(hashTimer); hashTimer = setTimeout(writeHash, 400); }
+function readHash() { const h = location.hash.replace(/^#/, ''); if (!h || h.indexOf('=') < 0) return null; const st = {}; try { new URLSearchParams(h).forEach((v, k) => { st[k] = v; }); } catch (e) { return null; } return Object.keys(st).length ? st : null; }
+// worked examples: start from the body's defaults, then override the listed fields (lengths/velocities in that body's default units)
+const PRESETS = {
+  'leo-geo':       { body: 'earth', o1: 6678.137, o2: 0, inc: 28.5, raan: 0, argp: 0, ta: 0, hoh_rf: 42164, hoh_thb: 0, _tab: 'transfer', _sub: 0 },
+  'leo-geo-inc':   { body: 'earth', o1: 6678.137, o2: 0, inc: 28.5, raan: 0, argp: 0, ta: 0, hp_rf: 42164, hp_di: 28.5, hp_alpha: 0, _tab: 'plane', _sub: 2 },
+  'iss-plane':     { body: 'earth', o1: 6778.137, o2: 0, inc: 28.5, raan: 0, argp: 0, ta: 0, pc_if: 51.6, 'r.pcmode': 'inc', _tab: 'plane', _sub: 0 },
+  'rendezvous':    { body: 'earth', o1: 6778.137, o2: 0, inc: 51.6, raan: 0, argp: 0, ta: 0, phc_nu: 30, phc_case: 'trail', phc_k: 3, phc_thb: 0, _tab: 'phasing', _sub: 0 },
+  'earth-mars':    { body: 'sun', o1: 1, o2: 0, inc: 0, raan: 0, argp: 0, ta: 0, hoh_rf: 1.5237, hoh_thb: 0, _tab: 'transfer', _sub: 0 },
+  'lunar-capture': { body: 'moon', defmode: 'rpe', o1: 1.0576, o2: 1.4, inc: 90, raan: 0, argp: 0, ta: -100, aps_mode: 'circP', _tab: 'single', _sub: 2 }
+};
+function applyPreset(pr) {
+  const b = pr.body, B = BODIES[b]; if (!B) return;
+  $('body').value = b; $('mu').value = B.mu; $('R').value = B.R; $('units').value = DEFAULT_UNITS[b]; refreshUnits(); applyDefaults(b);
+  const st = {}; for (const k in pr) if (k !== 'body') st[k] = String(pr[k]);
+  setState(st);
+}
 function init() {
   $('body').value = 'earth'; $('mu').value = BODIES.earth.mu; $('R').value = BODIES.earth.R; $('units').value = DEFAULT_UNITS.earth;
   refreshUnits(); applyDefaults('earth');
@@ -1657,13 +1897,16 @@ function init() {
   $('units').addEventListener('change', () => { const toCanon = $('units').value === 'canon'; convertFields(toCanon); refreshUnits(); update(); });
   $('defmode').addEventListener('change', () => { const o = readOrbit(); const a = o.valid ? o.a : 7000, e = o.valid ? o.e : 0; defMode = $('defmode').value; if (e >= 1 && (defMode === 'rpra' || defMode === 'hpha')) { defMode = 'rpe'; $('defmode').value = 'rpe'; } setShapeFields(a, e, Number.isFinite(o.R) ? o.R : 6378.137); update(); });
   document.querySelectorAll('input:not([data-a]), select:not([data-a])').forEach(el => { el.addEventListener('input', update); el.addEventListener('change', update); });
-  document.querySelectorAll('.tabs button').forEach(btn => btn.addEventListener('click', () => {
-    document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + btn.dataset.tab));
-    renderVisiblePlots();
-    try { localStorage.setItem('om-tab', btn.dataset.tab); } catch (e) {}
-  }));
-  try { const t = localStorage.getItem('om-tab'); if (t) { const b = document.querySelector(`.tabs button[data-tab="${t}"]`); if (b) b.click(); } } catch (e) {}
+  setupTabs();
+  setupFolds();
+  $('preset').addEventListener('change', () => { const k = $('preset').value; $('preset').value = ''; if (PRESETS[k]) applyPreset(PRESETS[k]); });
+  $('shareBtn').addEventListener('click', () => {
+    writeHash(); const url = location.href, btn = $('shareBtn'), done = ok => { btn.textContent = ok ? '✓ Link copied' : '🔗 Copy link'; if (ok) setTimeout(() => { btn.textContent = '🔗 Copy link'; }, 1600); };
+    const legacy = () => { try { const ta = document.createElement('textarea'); ta.value = url; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0;left:-999px'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok; } catch (e) { return false; } };
+    const fail = () => { btn.textContent = 'Link is in the address bar'; setTimeout(() => { btn.textContent = '🔗 Copy link'; }, 2200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(() => done(true), () => { if (legacy()) done(true); else fail(); }); else if (legacy()) done(true); else fail();
+  });
+  let rsz = 0; window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(renderVisiblePlots, 120); });
   const applyTheme = t => { if (t) document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme'); };
   try { applyTheme(localStorage.getItem('om-theme')); } catch (e) {}
   $('themeBtn').addEventListener('click', () => {
@@ -1672,7 +1915,8 @@ function init() {
     renderVisiblePlots();
   });
   window.onKatexReady = () => { typesetStatic(); update(); };
-  update();
+  const hs = readHash(); hashReady = true; hashLive = !!hs;
+  if (hs) setState(hs); else update();
 }
 init();
 })();
