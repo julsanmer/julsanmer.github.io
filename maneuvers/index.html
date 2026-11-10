@@ -1722,7 +1722,6 @@ function updatePhasingEll(o) {
     ['Coast to the burn point', fmtTime(tCoast)], [`Phasing time ${m`k\,T_{ph}`}`, fmtTime(k*Tph)], ['Rendezvous at', fmtTime(tCoast + k*Tph)]
   ]);
   out('pheOut', html);
-  const rB = rAt(o.p, o.e, thB);
   let anim = null, pheRender = null;
   if (feasible) {
     const phOrb = { p: ph.p, e: ph.e, w: wph };
@@ -1738,11 +1737,7 @@ function updatePhasingEll(o) {
   plot('phePlot', 'pheLeg', [
     { p: o.p, e: o.e, w: o.w, color: CI, label: 'common orbit' },
     { p: ph.p, e: ph.e, w: wph, color: C1, dash: true, label: 'phasing orbit' }
-  ], [
-    { x: o.r*Math.cos(o.th + o.w), y: o.r*Math.sin(o.th + o.w), color: CP, label: 'B (interceptor, θ₀)' },
-    { x: rB*Math.cos(thB + o.w), y: rB*Math.sin(thB + o.w), color: CF, label: 'A (target)' },
-    { x: r*Math.cos(thb + o.w), y: r*Math.sin(thb + o.w), color: C1, label: atPeri ? 'burns (periapsis)' : 'burns' }
-  ], o.R, { anim, onRender: pheRender || (() => plotPhase('phePhase', null)) });
+  ], [{ x: r*Math.cos(thb + o.w), y: r*Math.sin(thb + o.w), color: CP, label: 'burns' }], o.R, { anim, onRender: pheRender || (() => plotPhase('phePhase', null)) });
 }
 
 /* ---------- master update ---------- */
