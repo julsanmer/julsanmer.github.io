@@ -65,7 +65,7 @@ body{padding:16px}
 .panel .card.sub{display:none}
 .panel .card.sub.active{display:block}
 /* maneuver cards: the orbit view goes on top, centred and wide; the computed data sits below in collapsible sections */
-.panel .card > .two{grid-template-columns:1fr}
+.panel .card > .two{grid-template-columns:1fr;margin-top:16px} /* breathing room between the input fields and the view */
 .panel .card > .two > div:last-child{order:-1}
 @media (min-width:961px){
   .panel .plotbox canvas.c3d{aspect-ratio:auto;height:clamp(340px,58vh,640px)}
@@ -115,7 +115,7 @@ header p{margin:4px 0 0;color:var(--muted);max-width:70ch}
 .card h2{margin:0 0 10px;font-size:1.05rem}
 .card h3{margin:0 0 8px;font-size:.98rem}
 .card .lead{margin:0 0 12px;color:var(--muted);font-size:.92rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 12px;align-items:end} /* fields sit on a common line whatever the label height */
 label{display:flex;flex-direction:column;gap:4px;font-size:.84rem;color:var(--muted)}
 label > span.lbl{min-height:1.2em}
 input[type=number],input[type=text],select{width:100%;font:inherit;font-size:.95rem;color:var(--text);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 9px}
@@ -178,7 +178,7 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
 .anim .ticks{position:absolute;left:8px;right:8px;bottom:0;height:7px;pointer-events:none}
 .anim .ticks i{position:absolute;top:0;width:2px;height:7px;border-radius:1px;background:var(--c-dv);transform:translateX(-1px)}
 .anim select{width:auto;padding:2px 6px;font-size:.78rem}
-.anim .readout{width:100%;font-size:.8rem;color:var(--text);line-height:1.4}
+.anim .readout{width:100%;font-size:.8rem;color:var(--text);line-height:1.4;font-variant-numeric:tabular-nums}
 .anim .readout .ev{color:var(--muted);margin-right:10px}
 .anim .readout .ev.done{color:var(--ok-fg);font-weight:600}
 /* math */
@@ -605,12 +605,17 @@ function fmtTime(s, plain = false) {
   if (U.canon) return `${f(s/U.UT, 4)} UT`;
   return fmtClock(s);
 }
-function fmtClock(s) {
-  const sign = s < 0 ? '−' : ''; s = Math.abs(s);
+// ref (optional): a longer time whose layout is reused (same d / h parts), so a running clock keeps a constant width
+function fmtClock(s, ref) {
+  const sign = s < 0 ? '−' : ''; s = Math.round(Math.abs(s)*10)/10; const rf = Math.max(s, Number.isFinite(ref) ? Math.abs(ref) : 0);
   const d = Math.floor(s/86400), h = Math.floor((s % 86400)/3600), mi = Math.floor((s % 3600)/60), sec = s % 60;
-  const parts = []; if (d) parts.push(d + ' d'); if (d || h) parts.push(h + ' h'); parts.push(mi + ' min'); parts.push(sec.toFixed(1) + ' s');
+  const showD = rf >= 86400, showH = rf >= 3600, p2 = x => String(x).padStart(2, '0');
+  const parts = []; if (showD) parts.push(d + ' d'); if (showH) parts.push((showD ? p2(h) : h) + ' h'); parts.push((showH ? p2(mi) : mi) + ' min'); parts.push(sec.toFixed(1).padStart(4, '0') + ' s');
   return `${sign}${parts.join(' ')}`;
 }
+const fixV = x => U.canon ? `${(x/U.UV).toFixed(5)} UV` : `${x.toFixed(4)} km/s`; // fixed decimals for the animation readout
+// running time of an animation, laid out like its total duration
+const fmtRun = (t, total) => U.canon ? `${(t/U.UT).toFixed(4)} UT` : fmtClock(t, total);
 function rows(arr) {
   return '<table class="res">' + arr.map(r => {
     if (r.length === 1) return `<tr><th colspan="2" class="sub">${r[0]}</th></tr>`;
@@ -791,7 +796,7 @@ function updateAnimUI(id) {
   const tk = bar.querySelector('.ticks'); if (tk && tk._a !== a) { tk._a = a; tk.innerHTML = tr.events.map(e => `<i style="left:${(100*e.t/a.total).toFixed(2)}%" title="${e.label}"></i>`).join(''); }
   const dvUsed = tr.events.filter(e => a.t >= e.t - 1e-9).reduce((sm, e) => sm + (e.mag || 0), 0), dvAll = tr.events.reduce((sm, e) => sm + (e.mag || 0), 0);
   const ev = tr.events.map(e => `<span class="ev${a.t >= e.t - 1e-9 ? ' done' : ''}">${e.label} ${a.t >= e.t - 1e-9 ? '✓' : '·'} ${fmtTime(e.t, true)}</span>`).join('');
-  bar.querySelector('.readout').innerHTML = `<b>${pos.seg.label}</b> &nbsp;·&nbsp; t = ${fmtTime(a.t, true)} <span class="dim">of ${fmtTime(a.total, true)}</span>${dvAll > 0 ? ` &nbsp;·&nbsp; ΔV used ${kms(dvUsed)} <span class="dim">of ${kms(dvAll)}</span>` : ''}<br>${ev}`;
+  bar.querySelector('.readout').innerHTML = `<b>${pos.seg.label}</b> &nbsp;·&nbsp; t = ${fmtRun(a.t, a.total)} <span class="dim">of ${fmtRun(a.total, a.total)}</span>${dvAll > 0 ? ` &nbsp;·&nbsp; ΔV used ${fixV(dvUsed)} <span class="dim">of ${fixV(dvAll)}</span>` : ''}<br>${ev}`;
 }
 
 /* ---------- phase-angle chart (phasing cards): angle target − interceptor vs time ---------- */
