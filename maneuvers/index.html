@@ -735,7 +735,7 @@ function toPlane(v, i, Om) { // inverse of rotECI: inertial → plane frame (x, 
 }
 function animTrack(mu, legs, color, label) {
   const base = CUR || { i: 0, Om: 0 }; const segs = [], events = []; let t = 0;
-  let impact = false;
+  let impact = false, rateTotal = NaN; // rateTotal: duration the maneuver would have without the impact (sets the playback rate)
   for (let k = 0; k < legs.length && !impact; k++) {
     const L = legs[k];
     const sg = buildSeg(L.orb, mu, L.th0, L); sg.t0 = t; sg.label = L.label; t += sg.dur; segs.push(sg);
@@ -743,6 +743,7 @@ function animTrack(mu, legs, color, label) {
       const pl = sg.pts[sg.pts.length - 1]; const i = L.orb.i ?? base.i, Om = L.orb.Om ?? base.Om;
       events.push({ t, label: 'impact on the surface', impact: true, pos2: pl, pos3: rotECI(pl[0], pl[1], 0, i, Om) });
       sg.label += ' → impact'; impact = true;
+      rateTotal = sg.t0; for (let j = k; j < legs.length; j++) rateTotal += buildSeg(legs[j].orb, mu, legs[j].th0, { ...legs[j], R: 0 }).dur;
     } else if (L.burnAfter && legs[k + 1]) {
       const vb = velECI(L.orb, mu, sg.thEnd), va = velECI(legs[k + 1].orb, mu, legs[k + 1].th0);
       const dv3 = [va[0] - vb[0], va[1] - vb[1], va[2] - vb[2]]; const mag = Math.hypot(...dv3);
@@ -750,7 +751,7 @@ function animTrack(mu, legs, color, label) {
       events.push({ t, label: L.burnAfter, mag, pos2: pl, dv2: toPlane(dv3, i, Om), pos3: rotECI(pl[0], pl[1], 0, i, Om), dv3 });
     }
   }
-  return { segs, events, color, label, total: t, impact };
+  return { segs, events, color, label, total: t, impact, rateTotal: Number.isFinite(rateTotal) ? rateTotal : t };
 }
 function segIndex(sg, tl) { const ts = sg.ts; let lo = 0, hi = ts.length - 1; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (ts[mid] <= tl) lo = mid; else hi = mid; } return [lo, hi]; }
 function trackPos(tr, t) {
@@ -770,7 +771,7 @@ function animLoop(ts) {
   for (const id in ANIM) {
     const a = ANIM[id]; if (!a.playing) continue; any = true;
     if (a.hold > 0) { a.hold -= dt; render(id); continue; }
-    const tNew = a.t + dt*(a.total/ANIM_REAL_DURATION)*a.speed;
+    const tNew = a.t + dt*((a.rate || a.total)/ANIM_REAL_DURATION)*a.speed; // same simulated-time rate whether or not the trajectory ends in an impact
     const ev = a.tracks[0].events.find(e => !e.impact && a.t < e.t && e.t <= tNew);
     if (ev) { a.t = ev.t; a.hold = 1.0; } else a.t = tNew;
     if (a.t >= a.total) { a.t = a.total; a.playing = false; }
@@ -782,7 +783,7 @@ function startLoop() { if (!loopOn) { loopOn = true; lastTs = 0; requestAnimatio
 function setAnim(id, spec) {
   const prev = ANIM[id];
   if (!spec) { delete ANIM[id]; updateAnimUI(id); return; }
-  ANIM[id] = { tracks: spec.tracks, total: Math.max(...spec.tracks.map(t => t.total), 1e-9), t: 0, playing: false, hold: 0, speed: prev ? prev.speed : 1,
+  ANIM[id] = { tracks: spec.tracks, total: Math.max(...spec.tracks.map(t => t.total), 1e-9), rate: Math.max(...spec.tracks.map(t => t.rateTotal ?? t.total), 1e-9), t: 0, playing: false, hold: 0, speed: prev ? prev.speed : 1,
     dvMax: Math.max(1e-9, ...spec.tracks.flatMap(tr => tr.events.map(e => e.mag || 0))) };
   updateAnimUI(id);
 }
