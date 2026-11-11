@@ -1062,8 +1062,10 @@ function renderVisiblePlots() { Object.keys(PLOTS).forEach(id => { const el = $(
 function plotTriangle(svgId, Vi, Vf, phi, gam, angLabel = 'φ') { // gam: flight-path angle of V_i, to draw the local basis e_r (radial), e_θ (tangential)
   const svg = $(svgId); if (!svg) return;
   if (![Vi, Vf, phi].every(Number.isFinite)) { svg.innerHTML = ''; return; }
-  const ax = 0, ay = 0, bx = Vi, by = 0, cx = Vf*Math.cos(phi), cy = Vf*Math.sin(phi);
-  const basis = Number.isFinite(gam) ? (() => { const L = 0.55*Math.max(Vi, Vf); return { tx: L*Math.cos(-gam), ty: L*Math.sin(-gam), rx: L*Math.cos(Math.PI/2 - gam), ry: L*Math.sin(Math.PI/2 - gam) }; })() : null;
+  // with a local basis, e_θ is drawn horizontal and e_r vertical, and V_i is tilted by its flight-path angle γ; otherwise V_i is horizontal
+  const g0 = Number.isFinite(gam) ? gam : 0;
+  const ax = 0, ay = 0, bx = Vi*Math.cos(g0), by = Vi*Math.sin(g0), cx = Vf*Math.cos(g0 + phi), cy = Vf*Math.sin(g0 + phi);
+  const basis = Number.isFinite(gam) ? (() => { const L = 0.55*Math.max(Vi, Vf); return { tx: L, ty: 0, rx: 0, ry: L }; })() : null;
   const xs = [ax, bx, cx, ...(basis ? [basis.tx, basis.rx] : [])], ys = [ay, by, cy, ...(basis ? [basis.ty, basis.ry] : [])];
   const minx = Math.min(...xs), maxx = Math.max(...xs), miny = Math.min(...ys), maxy = Math.max(...ys);
   const w = Math.max(maxx - minx, 1e-6), h = Math.max(maxy - miny, 1e-6);
