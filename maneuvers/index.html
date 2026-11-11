@@ -1059,7 +1059,7 @@ function setPresent(col, id, on) {
 document.addEventListener('fullscreenchange', () => { document.querySelectorAll('.present').forEach(col => { if (col._fs && document.fullscreenElement !== col) { const sv = col.querySelector('svg[id$="Plot"]'); setPresent(col, sv ? sv.id : '', false); } }); renderVisiblePlots(); });
 document.addEventListener('keydown', ev => { if (ev.key !== 'Escape' || document.fullscreenElement) return; document.querySelectorAll('.present').forEach(col => { const sv = col.querySelector('svg[id$="Plot"]'); setPresent(col, sv ? sv.id : '', false); }); });
 function renderVisiblePlots() { Object.keys(PLOTS).forEach(id => { const el = $(id); if (el && el.parentElement.offsetParent !== null) render(id); }); }
-function plotTriangle(svgId, Vi, Vf, phi, gam, angLabel = 'φ') { // gam: flight-path angle of V_i, to draw the local basis e_r (radial), e_θ (tangential)
+function plotTriangle(svgId, Vi, Vf, phi, gam) { // (angle arcs are not drawn: the arrows alone read better) // gam: flight-path angle of V_i, to draw the local basis e_r (radial), e_θ (tangential)
   const svg = $(svgId); if (!svg) return;
   if (![Vi, Vf, phi].every(Number.isFinite)) { svg.innerHTML = ''; return; }
   // with a local basis, e_θ is drawn horizontal and e_r vertical, and V_i is tilted by its flight-path angle γ; otherwise V_i is horizontal
@@ -1094,10 +1094,7 @@ function plotTriangle(svgId, Vi, Vf, phi, gam, angLabel = 'φ') { // gam: flight
   for (let gx = Math.ceil(x0/step)*step; gx <= x0 + vbW; gx += step) grid += `<line x1="${gx}" y1="${y0}" x2="${gx}" y2="${y0 + vbH}" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
   for (let gy = Math.ceil(y0/step)*step; gy <= y0 + vbH; gy += step) grid += `<line x1="${x0}" y1="${gy}" x2="${x0 + vbW}" y2="${gy}" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
   grid += `<text x="${x0 + vbW - fs*0.3}" y="${y0 + vbH - fs*0.4}" font-size="${fs*0.8}" fill="var(--muted)" text-anchor="end">grid: ${f(stepD, 3)} ${uV()}</text>`;
-  let arc = ''; // arc marking the angle between V_i and V_f
-  if (Math.abs(phi) > 3*D2R) { const Ra = 0.3*Math.min(Vi, Vf); let dd = ''; for (let k = 0; k <= 24; k++) { const t = phi*k/24; dd += (k ? 'L' : 'M') + (Ra*Math.cos(t)) + ' ' + (-Ra*Math.sin(t)) + ' '; }
-    arc = `<path d="${dd}" fill="none" stroke="var(--text)" stroke-width="1" vector-effect="non-scaling-stroke"/><text x="${1.3*Ra*Math.cos(phi/2)}" y="${-1.3*Ra*Math.sin(phi/2)}" font-size="${fs*0.9}" fill="var(--text)" text-anchor="middle" dominant-baseline="middle" font-style="italic">${angLabel}</text>`; }
-  svg.innerHTML = grid + (basis ? axisArrow(basis.rx, basis.ry, 'e𝑟') + axisArrow(basis.tx, basis.ty, 'eθ') : '') + arc + arrow(ax, ay, bx, by, CI, 'Vᵢ') + arrow(ax, ay, cx, cy, CF, 'V𝑓') + arrow(bx, by, cx, cy, C1, 'ΔV');
+  svg.innerHTML = grid + (basis ? axisArrow(basis.rx, basis.ry, 'e𝑟') + axisArrow(basis.tx, basis.ty, 'eθ') : '') + arrow(ax, ay, bx, by, CI, 'Vᵢ') + arrow(ax, ay, cx, cy, CF, 'V𝑓') + arrow(bx, by, cx, cy, C1, 'ΔV');
 }
 
 /* ---------- global orbit ---------- */
